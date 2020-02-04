@@ -4,7 +4,7 @@
 
 На основе telethon и Django.
 
-Смотреть видео: [https://youtu.be/s9RHzPLtYWk]
+Смотреть видео: [video](https://youtu.be/s9RHzPLtYWk)
 
 ## Настройка
 

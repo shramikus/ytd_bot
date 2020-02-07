@@ -9,10 +9,7 @@
 
 Установить зависимости:
 
-    cd /Users/vladimir/Developer/td
-    mkvirtualenv --python=python3 td
-    workon td
-    pip install -r pip-requirements.txt
+    pip install -r requirements.txt
 
 Запуск админки:
 

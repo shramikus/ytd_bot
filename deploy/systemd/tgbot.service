@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User=www
 Group=www
-WorkingDirectory=/home/www/td/
-Environment="PYTHONPATH=/home/www/td/"
-ExecStart=/home/www/td/.venv/bin/python /home/www/td/tga/manage.py bot
+WorkingDirectory=/home/www/ytd_bot/
+Environment="PYTHONPATH=/home/www/ytd_bot/"
+ExecStart=/home/www/ytd_bot/.venv/bin/python /home/www/ytd_bot/tga/manage.py bot
 
 [Install]
 WantedBy=multi-user.target

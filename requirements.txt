@@ -1,6 +1,5 @@
-django==2.2.7
+django>=2.2.9
 gunicorn==20.0.4
-# python-telegram-bot
 telethon
 youtube-dl
 hachoir

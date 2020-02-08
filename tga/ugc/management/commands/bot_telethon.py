@@ -68,8 +68,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         bot = TelegramClient(
-            'bot', settings.BOT.API_ID,
-            settings.BOT.API_HASH).start(bot_token=settings.BOT.BOT_TOKEN)
+            'bot', settings.API_ID,
+            settings.API_HASH).start(bot_token=settings.BOT_TOKEN)
 
         bot.add_event_handler(echo, events.NewMessage)
         bot.add_event_handler(send_video,

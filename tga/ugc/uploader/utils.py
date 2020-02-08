@@ -114,8 +114,8 @@ class YtVideo:
         file = f'{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4'
         with TelegramClient(
                 f'upload',
-                settings.UPLOADER.API_ID,
-                settings.UPLOADER.API_HASH,
+                settings.API_ID,
+                settings.API_HASH,
         ) as client:
             t = tqdm.tqdm(total=100)
             file = client.send_file(

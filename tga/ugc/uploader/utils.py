@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -78,7 +77,7 @@ class YtVideo:
     def download_video(self):
         if not os.path.exists(settings.DOWNLOAD_PATH):
             os.mkdir(settings.DOWNLOAD_PATH)
-            logging.info(f'{settings.DOWNLOAD_PATH} created')
+            logging.info('%s created' % settings.DOWNLOAD_PATH)
         if os.path.exists(
                 f'{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4'):
             return
@@ -89,7 +88,7 @@ class YtVideo:
         ]
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        logging.warning(f'{stderr}')
+        logging.warning('stderr=$s' % stderr)
 
     def update_metadata(self):
         YtVideo.download_video(self)
@@ -128,7 +127,7 @@ class YtVideo:
                 progress_callback=lambda x, y: progress_tqdm(t, x, y))
 
             self.tg_id = utils.pack_bot_file_id(file.media.document)
-            logging.info(f'tg_id={self.tg_id}')
+            logging.info(f'tg_id=%s' % self.tg_id)
 
             shutil.rmtree(f'{settings.DOWNLOAD_PATH}/{self.yt_id}',
                           ignore_errors=True)

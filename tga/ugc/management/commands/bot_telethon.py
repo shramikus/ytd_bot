@@ -14,11 +14,10 @@ def log_errors(f):
     def inner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except Exception as e:
-            error_message = f"Произошла ошибка: {e}"
+        except Exception as exception:
+            error_message = f"Произошла ошибка: {exception}"
             print(error_message)
-            raise e
-
+            raise exception
     return inner
 
 
@@ -40,8 +39,8 @@ async def send_video(event):
     chat_id = event.chat_id
     text = event.text
 
-    p, _ = Profile.objects.get_or_create(
-        external_id=chat_id, defaults={"name": event.chat.username})
+    # p, _ = Profile.objects.get_or_create(
+    #     external_id=chat_id, defaults={"name": event.chat.username})
     yt_ids = utils.get_ids_by_link(text)
 
     if isinstance(yt_ids, list):

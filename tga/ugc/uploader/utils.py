@@ -89,7 +89,7 @@ class YtVideo:
         ]
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        logging.warning(f'{stderr=}')
+        logging.warning(f'{stderr}')
 
     def update_metadata(self):
         YtVideo.download_video(self)

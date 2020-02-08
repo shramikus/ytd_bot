@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from telethon import TelegramClient, events
+from telethon.sync import TelegramClient, events
 
 from ugc.models import Message, Profile, Video
 from ugc.uploader import utils

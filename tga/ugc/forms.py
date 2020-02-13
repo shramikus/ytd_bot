@@ -16,7 +16,7 @@ class VideoForm(forms.ModelForm):
     class Meta:
         model = Video
         fields = ('yt_id', 'title', 'uploader', 'upload_date', 'view_count',
-                  'tg_id')
+                  'tg_id', 'status')
         widgets = {
             'yt_id': forms.TextInput,
             'title': forms.TextInput,
@@ -24,4 +24,5 @@ class VideoForm(forms.ModelForm):
             'upload_date': forms.DateInput,
             'view_count': forms.NumberInput,
             'tg_id': forms.TextInput,
+            'status': forms.NumberInput
         }

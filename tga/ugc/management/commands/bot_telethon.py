@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from telethon.sync import TelegramClient, events
+from telethon import TelegramClient, events
 
 from ugc.models import Message, Profile, Video
 from ugc.uploader import utils
@@ -36,7 +36,7 @@ async def echo(event):
 
 @log_errors
 async def send_video(event):
-    chat_id = event.chat_id
+    # chat_id = event.chat_id
     text = event.text
 
     # p, _ = Profile.objects.get_or_create(

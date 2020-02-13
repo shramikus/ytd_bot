@@ -1,4 +1,4 @@
-django<=2.2.9
+django<=2.2.10
 gunicorn==20.0.4
 telethon
 youtube-dl
@@ -6,4 +6,4 @@ hachoir
 pillow
 cryptg
 pysocks
-tqdm
+python-telegram-bot

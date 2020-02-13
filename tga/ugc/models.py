@@ -32,17 +32,22 @@ class Message(models.Model):
 
 
 class Video(models.Model):
-    yt_id = models.TextField(verbose_name="Id видео", primary_key=True)
+    yt_id = models.CharField(verbose_name="Id видео",
+                             max_length=11,
+                             unique=True,
+                             primary_key=True)
     yt_url = models.URLField(verbose_name="Ссылка на видео")
     # created_at = models.DateTimeField(
     #     verbose_name='Время получения',
     #     auto_now_add=True)
     title = models.TextField(verbose_name="Название видео")
-    uploader = models.TextField(verbose_name="Канал отправителя")
+    uploader = models.CharField(verbose_name="Канал отправителя",
+                                max_length=150)
     upload_date = models.DateField(verbose_name="Дата публикации")
     view_count = models.PositiveIntegerField(verbose_name="Просмотров")
     rating = models.FloatField(verbose_name="Рейтинг")
-    tg_id = models.TextField(verbose_name="Id в телеграме")
+    tg_id = models.CharField(verbose_name="Id в телеграме", max_length=50)
+    status = models.PositiveIntegerField(verbose_name="Статус", default=0)
 
     def show_url(self):
         return format_html('<a href="{}">{}</a>'.format(

@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '!k5g2b^@qmkxmbnt1ooc3%)yuryyka-j7@_gf3ws#k%q5o+b8r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', Params.HOST]
 
@@ -102,12 +102,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = '/home/www/td/static/'
+STATIC_ROOT = '/home/www/ytd_bot/static/'
 
 # Настройки бота
 BOT_TOKEN = Params.BOT_TOKEN
 API_ID = Params.API_ID
 API_HASH = Params.API_HASH
-AUTH_USERS = [261336294, 448374494]
-TMP_CHAT = '@InternewBot'
+AUTH_USERS = Params.AUTH_USERS
+TMP_CHAT = Params.TMP_CHAT
+CHANNEL = Params.CHANNEL
 DOWNLOAD_PATH = 'DOWNLOADS'

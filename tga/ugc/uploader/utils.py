@@ -4,16 +4,16 @@ import os
 import shutil
 import subprocess
 import time
-import tqdm
 
 
 from django.conf import settings
-from telethon.sync import TelegramClient, utils
+from telethon import TelegramClient, utils
+
 # from tornado.platform.asyncio import AnyThreadEventLoopPolicy
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tga.tga.settings")
-
 # asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tga.tga.settings")
+
 
 logging.basicConfig(
     format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
@@ -46,14 +46,10 @@ def progress_callback(current, total):
     percent = int((current / total) * 100)
     print(f'\r{percent}%  ', end='')
     if percent == 100:
-        pass
+        print()
         # speed = round(((current - 0) / (now - last_time)) / 1000)
         # delta_time = now - last_time
         # print(speed, 'KB/s |', round(delta_time), 'с', end='\n')
-
-
-def progress_tqdm(callback, current, total):
-    callback.update()
 
 
 class YtVideo:
@@ -72,8 +68,6 @@ class YtVideo:
         self.tg_id = ''
         self.update_metadata()
 
-    # def __new__(cls, *args, **kwargs):
-
     def download_video(self):
         if not os.path.exists(settings.DOWNLOAD_PATH):
             os.mkdir(settings.DOWNLOAD_PATH)
@@ -88,7 +82,8 @@ class YtVideo:
         ]
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        logging.warning('stderr=$s' % stderr)
+        if stderr:
+            logging.warning('stderr=%s' % stderr)
 
     def update_metadata(self):
         YtVideo.download_video(self)
@@ -107,28 +102,26 @@ class YtVideo:
             self.like_count = j_data['like_count']
             self.average_rating = j_data['average_rating']
 
-    def send_video(self):
+    async def send_video(self):
         # YtVideo.update_metadata(self)
         caption = '**' + self.title + '**' + '\n' + \
                   f'Автор: [{self.uploader}]({self.url})'
         file = f'{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4'
-        with TelegramClient(
+        async with TelegramClient(
                 f'upload',
                 settings.API_ID,
                 settings.API_HASH,
         ) as client:
-            t = tqdm.tqdm(total=100)
-            file = client.send_file(
+            file = await client.send_file(
                 settings.TMP_CHAT,
                 file,
                 thumb=f'{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.jpg',
                 caption=caption,
                 supports_streaming=True,
-                progress_callback=lambda x, y: progress_tqdm(t, x, y))
+                progress_callback=progress_callback)
 
             self.tg_id = utils.pack_bot_file_id(file.media.document)
             logging.info(f'tg_id=%s' % self.tg_id)
 
             shutil.rmtree(f'{settings.DOWNLOAD_PATH}/{self.yt_id}',
                           ignore_errors=True)
-

@@ -20,4 +20,4 @@ class MessageAdmin(admin.ModelAdmin):
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
     list_display = ('yt_id', 'show_url', 'title', 'uploader', 'view_count',
-                    'rating')
+                    'rating', 'status')

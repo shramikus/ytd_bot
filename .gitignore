@@ -134,4 +134,5 @@ dmypy.json
 .idea
 *.pyc
 *.session
+*.session-journal
 keys.py

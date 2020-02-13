@@ -82,7 +82,7 @@ def send_video(update: Update, context: CallbackContext):
 
 @log_errors
 def send_post(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
+    chat_id = settings.CHANNEL
 
     v = Video.objects.order_by('status', '-view_count')[0]
     print(v.tg_id, v.status)

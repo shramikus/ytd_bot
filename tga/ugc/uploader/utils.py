@@ -23,7 +23,7 @@ last_current = 0
 def get_ids_by_link(link, num=None):
     if num:
         command = [
-            'youtube-dl', '--get-id', '--skip-download'
+            'youtube-dl', '--get-id', '--skip-download',
             '--playlist-end', str(num), link
         ]
     else:

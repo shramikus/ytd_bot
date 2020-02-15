@@ -53,16 +53,32 @@ def do_echo(update: Update, context: CallbackContext):
 @log_errors
 def send_video(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    text = update.message.text.split()[-1]
+    text = update.message.text.split()
     username = update.message.from_user.username
-
     p, _ = Profile.objects.get_or_create(external_id=chat_id,
                                          defaults={"name": username})
-    yt_ids = utils.get_ids_by_link(text)
-    logging.info(yt_ids)
+
+    message = update.message.reply_text(
+        text='Получаю информацию о списке видео')
+
+    if len(text) == 3:
+        num_videos = text[-1]
+        yt_ids = utils.get_ids_by_link(text[1])[:num_videos]
+    else:
+        yt_ids = utils.get_ids_by_link(text[1])
 
     if isinstance(yt_ids, list):
-        for yt_id in yt_ids:
+        logging.info(yt_ids)
+
+        for i, yt_id in enumerate(yt_ids):
+            context.bot.edit_message_text(
+                chat_id=message.chat_id,
+                message_id=message.message_id,
+                text=f'Загружаю видео {i+1} из {len(yt_ids)}\n'
+                     f'[https://www.youtube.com/watch?v={yt_id}]'
+                     f'(https://www.youtube.com/watch?v={yt_id})',
+                parse_mode='Markdown')
+
             video = utils.YtVideo(yt_id)
             asyncio.run(video.send_video())
             v = Video(yt_id=video.yt_id,
@@ -75,26 +91,21 @@ def send_video(update: Update, context: CallbackContext):
                       rating=video.average_rating,
                       yt_url=video.url)
             v.save()
-        update.message.reply_text(text=f'{yt_ids}\n Успешно')
+
+        success_text = f'{len(yt_ids)} видео успешно загружены\n' + '\n'.join([
+            f'[https://www.youtube.com/watch?v={yt_id}]'
+            f'(https://www.youtube.com/watch?v={yt_id})' for yt_id in yt_ids
+        ])
+        context.bot.edit_message_text(chat_id=message.chat_id,
+                                      message_id=message.message_id,
+                                      text=success_text,
+                                      parse_mode='Markdown')
+
     elif isinstance(yt_ids, str):
-        update.message.reply_text(text=yt_ids)
-
-
-@log_errors
-def send_post(update: Update, context: CallbackContext):
-    chat_id = settings.CHANNEL
-
-    v = Video.objects.order_by('status', '-view_count')[0]
-    print(v.tg_id, v.status)
-    caption = '*' + v.title + '*' + '\n' + \
-              f'Автор: [{v.uploader}]({v.yt_url})'
-    v.status += 1
-    v.save()
-
-    context.bot.send_video(chat_id,
-                           v.tg_id,
-                           caption=caption,
-                           parse_mode='Markdown')
+        logging.error(yt_ids)
+        context.bot.edit_message_text(chat_id=message.chat_id,
+                                      message_id=message.message_id,
+                                      text=yt_ids)
 
 
 def send_post_context(context: CallbackContext):
@@ -112,48 +123,69 @@ def send_post_context(context: CallbackContext):
                            parse_mode='Markdown')
 
 
-# @log_errors
+def send_post(update: Update, context: CallbackContext):
+    assert update.effective_chat.id in settings.AUTH_USERS
+    context.job_queue.run_once(
+        send_post_context,
+        1,
+        # context=update.message.chat_id
+    )
+
+
 def job_maker(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
-    chat_id = update.message.chat_id
+    # chat_id = update.message.chat_id
     text = update.message.text.split()[1:]
     try:
         interval = int(text[0])
         first = context.args[1]
         if first == 'now':
             first = None
+            dt = datetime.now().hour, datetime.now().minute
         else:
             h = int(first.split(':')[0])
             m = int(first.split(':')[1])
             first = datetime.now().replace(hour=h, minute=m)
+            dt = first.hour, first.minute
 
-        # Add job to queue and stop current one if there is a timer already
         if 'job' in context.chat_data:
             old_job = context.chat_data['job']
             old_job.schedule_removal()
-        new_job = context.job_queue.run_repeating(send_post_context,
-                                                  interval,
-                                                  first,
-                                                  context=chat_id)
+        new_job = context.job_queue.run_repeating(
+            send_post_context,
+            interval,
+            first,
+            # context=chat_id
+        )
         context.chat_data['job'] = new_job
 
-        update.message.reply_text('Успешно!')
+        update.message.reply_text('Расписание настроено'
+                                  f'Интервал: {interval/60} мин'
+                                  f'Начало: {dt[0]}:{dt[1]}')
 
     except (IndexError, ValueError):
-        update.message.reply_text('Используй: /job <интервал> <начало>')
+        update.message.reply_text('Используй: /set <интервал> <начало>')
 
 
-def unset(update, context):
-    """Remove the job if the user changed their mind."""
+def unset(update: Update, context: CallbackContext):
     if 'job' not in context.chat_data:
-        update.message.reply_text('You have no active timer')
+        update.message.reply_text('Автопубликации не настроены')
         return
 
     job = context.chat_data['job']
     job.schedule_removal()
     del context.chat_data['job']
 
-    update.message.reply_text('Timer successfully unset!')
+    update.message.reply_text('Автопубликация выключена')
+
+
+def help(update: Update, context: CallbackContext):
+    message = update.message.reply_text(
+        text='Получаю информацию о списке видео')
+    # print(message)
+    context.bot.edit_message_text(chat_id=message.chat_id,
+                                  message_id=message.message_id,
+                                  text='sdasdasd')
 
 
 class Command(BaseCommand):
@@ -170,6 +202,7 @@ class Command(BaseCommand):
 
         updater = Updater(bot=bot, use_context=True)
         message_handler = MessageHandler(Filters.text, do_echo)
+        updater.dispatcher.add_handler(CommandHandler("help", help))
         updater.dispatcher.add_handler(CommandHandler("video", send_video))
         updater.dispatcher.add_handler(CommandHandler("send", send_post))
         updater.dispatcher.add_handler(CommandHandler("set", job_maker))

@@ -62,8 +62,8 @@ def send_video(update: Update, context: CallbackContext):
         text='Получаю информацию о списке видео')
 
     if len(text) == 3:
-        num_videos = text[-1]
-        yt_ids = utils.get_ids_by_link(text[1])[:num_videos]
+        num_videos = int(text[-1])
+        yt_ids = utils.get_ids_by_link(text[1], num=num_videos)
     else:
         yt_ids = utils.get_ids_by_link(text[1])
 

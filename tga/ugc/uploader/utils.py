@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import time
 
-
 from django.conf import settings
 from telethon import TelegramClient, utils
 
@@ -14,7 +13,6 @@ from telethon import TelegramClient, utils
 
 # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tga.tga.settings")
 
-
 logging.basicConfig(
     format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
     level=logging.INFO)
@@ -22,9 +20,14 @@ logging.basicConfig(
 last_current = 0
 
 
-def get_ids_by_link(link):
-    command = ['youtube-dl', '--get-id', '--skip-download', link]
-
+def get_ids_by_link(link, num=None):
+    if num:
+        command = [
+            'youtube-dl', '--get-id', '--skip-download'
+            '--playlist-end', num, link
+        ]
+    else:
+        command = ['youtube-dl', '--get-id', '--skip-download', link]
     edit = lambda x: x.strip().decode("utf-8")
 
     p = subprocess.Popen(command,

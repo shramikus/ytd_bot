@@ -136,8 +136,9 @@ def send_post(update: Update, context: CallbackContext):
     if len(text) == 2:
         h = int(text[1].split(':')[0])
         m = int(text[1].split(':')[1])
+        push_time = (datetime.now().replace(hour=h, minute=m) -
+                     datetime.now()).seconds
 
-        push_time = datetime.now().replace(hour=h, minute=m)
         context.job_queue.run_once(
             lambda x: send_post_context(x, text[0]),
             push_time,

@@ -5,7 +5,6 @@ from datetime import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.db.models import F
 
 from telegram import Bot, Update
 from telegram.ext import CallbackContext, CommandHandler, Filters, \
@@ -17,7 +16,7 @@ from ugc.uploader import utils
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    level=logging.WARNING)
 
 
 def log_errors(f):

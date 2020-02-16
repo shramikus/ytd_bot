@@ -50,6 +50,7 @@ def progress_callback(current, total):
     print(f'\r{percent}%  ', end='')
     if percent == 100:
         print()
+        pass
         # speed = round(((current - 0) / (now - last_time)) / 1000)
         # delta_time = now - last_time
         # print(speed, 'KB/s |', round(delta_time), 'с', end='\n')

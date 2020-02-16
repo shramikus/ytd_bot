@@ -115,7 +115,7 @@ def send_video(update: Update, context: CallbackContext):
 def send_post_context(context: CallbackContext, video_id=None):
     chat_id = settings.CHANNEL
     if video_id:
-        v = Video.objects.get(yt_id__exact=video_id)
+        v = Video.objects.get(yt_id=video_id)
     else:
         v = Video.objects.order_by('status', '-upload_date')[0]
     print(v.tg_id, v.status)
@@ -136,7 +136,7 @@ def send_post(update: Update, context: CallbackContext):
     if len(text) == 2:
         h = int(text[1].split(':')[0])
         m = int(text[1].split(':')[1])
-        push_time = (datetime.now().replace(hour=h, minute=m) -
+        push_time = (datetime.now().replace(hour=h, minute=m, second=1) -
                      datetime.now()).seconds
 
         context.job_queue.run_once(
@@ -167,7 +167,7 @@ def job_maker(update: Update, context: CallbackContext):
         else:
             h = int(first.split(':')[0])
             m = int(first.split(':')[1])
-            first = datetime.now().replace(hour=h, minute=m)
+            first = datetime.now().replace(hour=h, minute=m, second=1)
             dt = first.hour, first.minute
 
         if 'job' in context.chat_data:
@@ -201,12 +201,15 @@ def unset(update: Update, context: CallbackContext):
 
 
 def help(update: Update, context: CallbackContext):
-    message = update.message.reply_text(
-        text='Получаю информацию о списке видео')
-    # print(message)
-    context.bot.edit_message_text(chat_id=message.chat_id,
-                                  message_id=message.message_id,
-                                  text='sdasdasd')
+
+    text = 'Список комманд:\n' \
+           '/video <ссылка на видео/канал/плейлист> ' \
+           '<опционально, колличество видео для загрузки>\n' \
+           '/send <id видео> <время отправки>' \
+           '/set <интервал> <начало>' \
+           '/unset - убрать расписание'
+
+    update.message.reply_text(text=text)
 
 
 class Command(BaseCommand):

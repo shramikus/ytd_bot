@@ -75,21 +75,26 @@ def send_video(update: Update, context: CallbackContext):
                 chat_id=message.chat_id,
                 message_id=message.message_id,
                 text=f'Загружаю видео {i+1} из {len(yt_ids)}\n'
-                     f'[https://www.youtube.com/watch?v={yt_id}]'
-                     f'(https://www.youtube.com/watch?v={yt_id})',
+                f'[https://www.youtube.com/watch?v={yt_id}]'
+                f'(https://www.youtube.com/watch?v={yt_id})',
                 parse_mode='Markdown')
 
             video = utils.YtVideo(yt_id)
             asyncio.run(video.send_video())
-            v = Video(yt_id=video.yt_id,
-                      title=video.title,
-                      uploader=video.uploader,
-                      upload_date=timezone.get_current_timezone().localize(
-                          datetime.strptime(video.upload_date, "%Y%m%d")),
-                      view_count=video.view_count,
-                      tg_id=video.tg_id,
-                      rating=video.average_rating,
-                      yt_url=video.url)
+            v = Video(
+                yt_id=video.yt_id,
+                title=video.title,
+                uploader=video.uploader,
+                upload_date=timezone.get_current_timezone().localize(
+                    datetime.strptime(video.upload_date, "%Y%m%d")),
+                view_count=video.view_count,
+                tg_id=video.tg_id,
+                rating=video.average_rating,
+                yt_url=video.url,
+                tags=video.tags,
+                categories=video.categories,
+                likes=video.like_count,
+            )
             v.save()
 
         success_text = f'{len(yt_ids)} видео успешно загружены\n' + '\n'.join([
@@ -110,7 +115,7 @@ def send_video(update: Update, context: CallbackContext):
 
 def send_post_context(context: CallbackContext):
     chat_id = settings.CHANNEL
-    v = Video.objects.order_by('status', '-view_count')[0]
+    v = Video.objects.order_by('status', '-upload_date')[0]
     print(v.tg_id, v.status)
     caption = '*' + v.title + '*' + '\n' + \
               f'Автор: [{v.uploader}]({v.yt_url})'
@@ -125,16 +130,16 @@ def send_post_context(context: CallbackContext):
 
 def send_post(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
+    text = update.message.text.split()[1:]
+
     context.job_queue.run_once(
         send_post_context,
         1,
-        # context=update.message.chat_id
     )
 
 
 def job_maker(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
-    # chat_id = update.message.chat_id
     text = update.message.text.split()[1:]
     try:
         interval = int(text[0])
@@ -155,7 +160,6 @@ def job_maker(update: Update, context: CallbackContext):
             send_post_context,
             interval,
             first,
-            # context=chat_id
         )
         context.chat_data['job'] = new_job
 
@@ -196,7 +200,6 @@ class Command(BaseCommand):
         bot = Bot(
             request=request,
             token=settings.BOT_TOKEN,
-            # base_url=getattr(settings, "PROXY_URL", None)
         )
         print(bot.get_me())
 

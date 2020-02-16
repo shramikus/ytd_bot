@@ -37,9 +37,6 @@ class Video(models.Model):
                              unique=True,
                              primary_key=True)
     yt_url = models.URLField(verbose_name="Ссылка на видео")
-    # created_at = models.DateTimeField(
-    #     verbose_name='Время получения',
-    #     auto_now_add=True)
     title = models.TextField(verbose_name="Название видео")
     uploader = models.CharField(verbose_name="Канал отправителя",
                                 max_length=150)
@@ -48,6 +45,9 @@ class Video(models.Model):
     rating = models.FloatField(verbose_name="Рейтинг")
     tg_id = models.CharField(verbose_name="Id в телеграме", max_length=50)
     status = models.PositiveIntegerField(verbose_name="Статус", default=0)
+    tags = models.TextField(verbose_name="Теги", default='')
+    categories = models.TextField(verbose_name="Категории", default='')
+    likes = models.PositiveIntegerField(verbose_name="Лайки", default=0)
 
     def show_url(self):
         return format_html('<a href="{}">{}</a>'.format(

@@ -31,7 +31,7 @@ def log_errors(f):
     return inner
 
 
-# @log_errors
+@log_errors
 def do_echo(update: Update, context: CallbackContext):
     if update.effective_chat.type == 'private':
         chat_id = update.effective_chat.id
@@ -112,6 +112,7 @@ def send_video(update: Update, context: CallbackContext):
                                       text=yt_ids)
 
 
+@log_errors
 def send_post_context(context: CallbackContext, video_id=None):
     chat_id = settings.CHANNEL
     if video_id:
@@ -130,6 +131,7 @@ def send_post_context(context: CallbackContext, video_id=None):
                            parse_mode='Markdown')
 
 
+@log_errors
 def send_post(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
     text = update.message.text.split()[1:]
@@ -155,6 +157,7 @@ def send_post(update: Update, context: CallbackContext):
         )
 
 
+@log_errors
 def job_maker(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
     text = update.message.text.split()[1:]
@@ -188,6 +191,7 @@ def job_maker(update: Update, context: CallbackContext):
         update.message.reply_text('Используй: /set <интервал> <начало>')
 
 
+@log_errors
 def unset(update: Update, context: CallbackContext):
     if 'job' not in context.chat_data:
         update.message.reply_text('Автопубликации не настроены')
@@ -200,13 +204,14 @@ def unset(update: Update, context: CallbackContext):
     update.message.reply_text('Автопубликация выключена')
 
 
+@log_errors
 def help(update: Update, context: CallbackContext):
 
     text = 'Список комманд:\n' \
            '/video <ссылка на видео/канал/плейлист> ' \
            '<опционально, колличество видео для загрузки>\n' \
-           '/send <id видео> <время отправки>' \
-           '/set <интервал> <начало>' \
+           '/send <id видео> <время отправки>\n' \
+           '/set <интервал> <начало>\n' \
            '/unset - убрать расписание'
 
     update.message.reply_text(text=text)

@@ -113,9 +113,12 @@ def send_video(update: Update, context: CallbackContext):
                                       text=yt_ids)
 
 
-def send_post_context(context: CallbackContext):
+def send_post_context(context: CallbackContext, video_id=None):
     chat_id = settings.CHANNEL
-    v = Video.objects.order_by('status', '-upload_date')[0]
+    if video_id:
+        v = Video.objects.get(yt_id__exact=video_id)
+    else:
+        v = Video.objects.order_by('status', '-upload_date')[0]
     print(v.tg_id, v.status)
     caption = '*' + v.title + '*' + '\n' + \
               f'Автор: [{v.uploader}]({v.yt_url})'
@@ -131,11 +134,25 @@ def send_post_context(context: CallbackContext):
 def send_post(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
     text = update.message.text.split()[1:]
+    if len(text) == 2:
+        h = int(text[1].split(':')[0])
+        m = int(text[1].split(':')[1])
 
-    context.job_queue.run_once(
-        send_post_context,
-        1,
-    )
+        push_time = datetime.now().replace(hour=h, minute=m)
+        context.job_queue.run_once(
+            lambda x: send_post_context(x, text[0]),
+            push_time,
+        )
+    elif len(text) == 0:
+        context.job_queue.run_once(
+            send_post_context,
+            1,
+        )
+    elif len(text) == 1:
+        context.job_queue.run_once(
+            lambda x: send_post_context(x, text[0]),
+            1,
+        )
 
 
 def job_maker(update: Update, context: CallbackContext):

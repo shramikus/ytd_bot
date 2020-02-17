@@ -19,37 +19,40 @@ from telegram.utils.request import Request
 from ugc.models import Message, Profile, Video
 from ugc.uploader import utils
 
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
 )
 
 
-def log_errors(f):
+def log_errors(function):
     def inner(*args, **kwargs):
         try:
-            return f(*args, **kwargs)
-        except Exception as e:
-            error_message = f"Произошла ошибка: {e}"
+            return function(*args, **kwargs)
+        except Exception:
+            error_message = f"Произошла ошибка: {Exception}"
             print(error_message)
-            raise e
+            raise Exception
 
     return inner
 
 
 @log_errors
-def do_echo(update: Update, context: CallbackContext):
+def do_echo(update: Update):
     if update.effective_chat.type == "private":
-        chat_id = update.effective_chat.id
-        text = update.message.text
-        username = update.message.from_user.username
+        message_chat_id = update.effective_chat.id
+        message_text = update.message.text
+        message_username = update.message.from_user.username
 
-        p, _ = Profile.objects.get_or_create(
-            external_id=chat_id, defaults={"name": username}
+        profile, _ = Profile.objects.get_or_create(
+            external_id=message_chat_id, defaults={"name": message_username}
         )
-        m = Message(profile=p, text=text)
-        m.save()
+        message = Message(profile=profile, text=message_text)
+        message.save()
 
-        reply_text = f"Принято\n" f"chat_id: {chat_id}\n" f"username: {username}"
+        reply_text = (
+            f"Принято\n" f"chat_id: {message_chat_id}\n" f"username: {message_username}"
+        )
         update.message.reply_text(text=reply_text)
 
 
@@ -204,7 +207,7 @@ def unset(update: Update, context: CallbackContext):
 
 
 @log_errors
-def help(update: Update, context: CallbackContext):
+def help_command(update: Update):
 
     text = (
         "Список комманд:\n"
@@ -228,7 +231,7 @@ class Command(BaseCommand):
 
         updater = Updater(bot=bot, use_context=True)
         message_handler = MessageHandler(Filters.text, do_echo)
-        updater.dispatcher.add_handler(CommandHandler("help", help))
+        updater.dispatcher.add_handler(CommandHandler("help", help_command))
         updater.dispatcher.add_handler(CommandHandler("video", send_video))
         updater.dispatcher.add_handler(CommandHandler("send", send_post))
         updater.dispatcher.add_handler(CommandHandler("set", job_maker))

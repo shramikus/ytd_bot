@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
-import time
+# import time
 
 from django.conf import settings
 from telethon import TelegramClient, utils
@@ -11,8 +11,6 @@ from telethon import TelegramClient, utils
 logging.basicConfig(
     format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
 )
-
-last_current = 0
 
 
 def get_ids_by_link(link, num=None):
@@ -69,7 +67,7 @@ class YtVideo:
     def download_video(self):
         if not os.path.exists(settings.DOWNLOAD_PATH):
             os.mkdir(settings.DOWNLOAD_PATH)
-            logging.info("%s created" % settings.DOWNLOAD_PATH)
+            logging.info("%s created", settings.DOWNLOAD_PATH)
         if os.path.exists(f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4"):
             return
         command = [
@@ -86,13 +84,13 @@ class YtVideo:
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
         if stderr:
-            logging.warning("stderr=%s" % stderr)
+            logging.warning("stderr: %s", stderr)
 
     def update_metadata(self):
         YtVideo.download_video(self)
 
         with open(
-            f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.info.json"
+                f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.info.json"
         ) as file:
             j_data = json.loads(file.read())
             self.uploader = j_data["uploader"]
@@ -112,7 +110,7 @@ class YtVideo:
         )
         file = f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4"
         async with TelegramClient(
-            f"upload", settings.API_ID, settings.API_HASH,
+                f"upload", settings.API_ID, settings.API_HASH,
         ) as client:
             file = await client.send_file(
                 settings.TMP_CHAT,
@@ -124,6 +122,6 @@ class YtVideo:
             )
 
             self.tg_id = utils.pack_bot_file_id(file.media.document)
-            logging.info(f"tg_id=%s" % self.tg_id)
+            logging.info("tg_id: %s", self.tg_id)
 
             shutil.rmtree(f"{settings.DOWNLOAD_PATH}/{self.yt_id}", ignore_errors=True)

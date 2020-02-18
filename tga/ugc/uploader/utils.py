@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+
 # import time
 
 from django.conf import settings
@@ -48,28 +49,44 @@ def progress_callback(current, total):
         print()
 
 
-class YtVideo:
-    def __init__(self, yt_id):
-        self.url = f"https://www.youtube.com/watch?v={yt_id}"
-        self.yt_id = yt_id
-        self.uploader = None
-        self.upload_date = None
-        self.title = None
+class YoutubeVideo:
+    def __init__(self, video_id):
+        self.video_id = video_id
+        self.uploader = ""
+        self.upload_date = ""
+        self.title = ""
         self.tags = []
         self.categories = []
-        self.duration = None
-        self.view_count = None
-        self.like_count = None
-        self.average_rating = None
+        self.duration = 0
+        self.view_count = 0
+        self.like_count = 0
+        self.average_rating = 0.0
         self.tg_id = ""
         self.update_metadata()
+
+    def make_url(self):
+        url = f"https://www.youtube.com/watch?v={self.video_id}"
+        return url
+
+    def get_full_path(self, extension=None):
+
+        if extension:
+            video_path = os.path.join(
+                settings.DOWNLOAD_PATH, self.video_id, f"{self.video_id}.{extension}"
+            )
+        else:
+            video_path = os.path.join(settings.DOWNLOAD_PATH, self.video_id)
+        return video_path
 
     def download_video(self):
         if not os.path.exists(settings.DOWNLOAD_PATH):
             os.mkdir(settings.DOWNLOAD_PATH)
             logging.info("%s created", settings.DOWNLOAD_PATH)
-        if os.path.exists(f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4"):
-            return
+
+        if os.path.exists(self.get_full_path("mp4")):
+            logging.warning("file already downloaded %s", self.get_full_path("mp4"))
+            return None
+
         command = [
             "youtube-dl",
             "--quiet",
@@ -79,7 +96,7 @@ class YtVideo:
             "mp4",
             "-o",
             f"{settings.DOWNLOAD_PATH}/%(id)s/%(id)s.%(ext)s",
-            self.url,
+            self.make_url(),
         ]
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
@@ -87,12 +104,12 @@ class YtVideo:
             logging.warning("stderr: %s", stderr)
 
     def update_metadata(self):
-        YtVideo.download_video(self)
 
-        with open(
-                f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.info.json"
-        ) as file:
+        self.download_video()
+
+        with open(self.get_full_path("info.json"), "r") as file:
             j_data = json.loads(file.read())
+
             self.uploader = j_data["uploader"]
             self.upload_date = j_data["upload_date"]
             self.title = j_data["fulltitle"]
@@ -104,24 +121,23 @@ class YtVideo:
             self.average_rating = j_data["average_rating"]
 
     async def send_video(self):
-        # YtVideo.update_metadata(self)
-        caption = (
-            "**" + self.title + "**" + "\n" + f"Автор: [{self.uploader}]({self.url})"
-        )
-        file = f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.mp4"
+
+        # YoutubeVideo.update_metadata(self)
+        caption = f"**{self.title}**\n" + f"Автор: [{self.uploader}]({self.make_url()})"
+
         async with TelegramClient(
-                f"upload", settings.API_ID, settings.API_HASH,
+                "upload", settings.API_ID, settings.API_HASH,
         ) as client:
             file = await client.send_file(
                 settings.TMP_CHAT,
-                file,
-                thumb=f"{settings.DOWNLOAD_PATH}/{self.yt_id}/{self.yt_id}.jpg",
+                self.get_full_path("mp4"),
+                thumb=self.get_full_path("jpg"),
                 caption=caption,
                 supports_streaming=True,
-                progress_callback=progress_callback,
+                # progress_callback=progress_callback,
             )
 
             self.tg_id = utils.pack_bot_file_id(file.media.document)
             logging.info("tg_id: %s", self.tg_id)
 
-            shutil.rmtree(f"{settings.DOWNLOAD_PATH}/{self.yt_id}", ignore_errors=True)
+            shutil.rmtree(self.get_full_path(), ignore_errors=True)

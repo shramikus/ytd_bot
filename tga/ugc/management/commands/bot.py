@@ -29,16 +29,32 @@ def log_errors(function):
     def inner(*args, **kwargs):
         try:
             return function(*args, **kwargs)
-        except Exception:
-            error_message = f"Произошла ошибка: {Exception}"
+        except Exception as exception:
+            error_message = f"Произошла ошибка: {exception}"
             print(error_message)
-            raise Exception
+            raise exception
 
     return inner
 
 
+def markdown_link(youtube_id):
+    link = f"https://www.youtube.com/watch?v={youtube_id}"
+    return f"[{link}]({link})"
+
+
+def existed_videos(youtube_ids):
+    dowloaded_videos = list(Video.objects.values_list("yt_id", flat=True))
+    new_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id not in dowloaded_videos]
+    old_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id in dowloaded_videos]
+
+    if not new_youtube_ids:
+        return "Videos already uploaded"
+
+    return new_youtube_ids, old_youtube_ids
+
+
 @log_errors
-def do_echo(update: Update):
+def do_echo(update: Update, context: CallbackContext):
     if update.effective_chat.type == "private":
         message_chat_id = update.effective_chat.id
         message_text = update.message.text
@@ -59,8 +75,8 @@ def do_echo(update: Update):
 @log_errors
 def send_video(update: Update, context: CallbackContext):
     assert update.effective_chat.id in settings.AUTH_USERS
-    text = update.message.text.split()
 
+    text = update.message.text.split()
     message = update.message.reply_text(text="Получаю информацию о списке видео")
 
     if len(text) == 3:
@@ -69,23 +85,26 @@ def send_video(update: Update, context: CallbackContext):
     else:
         yt_ids = utils.get_ids_by_link(text[1])
 
+    yt_ids = existed_videos(yt_ids)
+
     if isinstance(yt_ids, list):
         logging.info(yt_ids)
+
+        yt_ids = yt_ids[0]
 
         for i, yt_id in enumerate(yt_ids):
             context.bot.edit_message_text(
                 chat_id=message.chat_id,
                 message_id=message.message_id,
                 text=f"Загружаю видео {i+1} из {len(yt_ids)}\n"
-                f"[https://www.youtube.com/watch?v={yt_id}]"
-                f"(https://www.youtube.com/watch?v={yt_id})",
+                f"{markdown_link(yt_id)}",
                 parse_mode="Markdown",
             )
 
-            video = utils.YtVideo(yt_id)
+            video = utils.YoutubeVideo(yt_id)
             asyncio.run(video.send_video())
             v = Video(
-                yt_id=video.yt_id,
+                yt_id=video.video_id,
                 title=video.title,
                 uploader=video.uploader,
                 upload_date=timezone.get_current_timezone().localize(
@@ -94,7 +113,7 @@ def send_video(update: Update, context: CallbackContext):
                 view_count=video.view_count,
                 tg_id=video.tg_id,
                 rating=video.average_rating,
-                yt_url=video.url,
+                yt_url=video.make_url(),
                 tags=video.tags,
                 categories=video.categories,
                 likes=video.like_count,
@@ -102,11 +121,7 @@ def send_video(update: Update, context: CallbackContext):
             v.save()
 
         success_text = f"{len(yt_ids)} видео успешно загружены\n" + "\n".join(
-            [
-                f"[https://www.youtube.com/watch?v={yt_id}]"
-                f"(https://www.youtube.com/watch?v={yt_id})"
-                for yt_id in yt_ids
-            ]
+            [f"{markdown_link(yt_id)}" for yt_id in yt_ids]
         )
         context.bot.edit_message_text(
             chat_id=message.chat_id,

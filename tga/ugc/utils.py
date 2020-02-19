@@ -6,12 +6,65 @@ import subprocess
 
 # import time
 
+from ugc.models import AppConfig, Video
 from django.conf import settings
 from telethon import TelegramClient, utils
 
 logging.basicConfig(
-    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
+    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
 )
+
+
+def markdown_link(youtube_id):
+    link = f"https://www.youtube.com/watch?v={youtube_id}"
+    return f"[{link}]({link})"
+
+
+def parse_message(text):
+    query = text.split()
+
+    if query[0] == "/video":
+        query = query[1:]
+
+        if len(query) == 0:
+            return "Укажите видео"
+
+        if len(query) == 1:
+            link = query[0]
+            return existed_videos(get_ids_by_link(link))
+
+        if len(query) == 2 and query[1].isdigit():
+            link = query[0]
+            num_videos = query[1]
+            return existed_videos(get_ids_by_link(link, num_videos))
+
+        if len(query) >= 2:
+            video_ids = []
+            error_messages = []
+
+            for link in query:
+                ids = get_ids_by_link(link)
+                if isinstance(ids, list):
+                    video_ids += ids
+                elif isinstance(ids, str):
+                    error_messages.append(ids)
+
+            if video_ids:
+                return existed_videos(video_ids)
+
+            unique_error_messages = set(error_messages)
+            final_message = "\n".join(unique_error_messages)
+            return final_message
+
+
+def existed_videos(youtube_ids):
+    dowloaded_videos = list(Video.objects.values_list("yt_id", flat=True))
+    new_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id not in dowloaded_videos]
+    # old_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id in dowloaded_videos]
+    if not new_youtube_ids:
+        return "Видео уже загружено"
+
+    return new_youtube_ids
 
 
 def get_ids_by_link(link, num=None):
@@ -35,11 +88,33 @@ def get_ids_by_link(link, num=None):
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout = list(map(edit, p.stdout.readlines())) if p.stdout else ""
-    stderr = p.stderr.read().decode("utf-8") if p.stderr else ""
-
-    if stderr:
-        return stderr
+    stderr = p.stderr.read()
+    try:
+        encoded_stderr = stderr.decode("utf-8") if stderr else ""
+    except UnicodeDecodeError:
+        encoded_stderr = str(stderr if stderr else "")
+    if encoded_stderr:
+        return encoded_stderr
     return stdout
+
+
+def get_config(is_bot=False):
+    if is_bot:
+        configs = AppConfig.objects.filter(is_bot=True, is_active=True)
+        config = configs[0]
+        config.bot_token = str(config.bot_token)
+        config.posting_channel = int(config.posting_channel)
+        config.auth_users = list(map(int, config.auth_users.split()))
+    else:
+        configs = AppConfig.objects.filter(is_bot=False, is_active=True)
+        config = configs[0]
+        config.session_name = str(config.session_name)
+        config.api_id = int(config.api_id)
+        config.api_hash = str(config.api_hash)
+        config.temp_chat = str(config.temp_chat)
+
+    logging.info("selected config %s", config)
+    return config
 
 
 def progress_callback(current, total):
@@ -69,7 +144,6 @@ class YoutubeVideo:
         return url
 
     def get_full_path(self, extension=None):
-
         if extension:
             video_path = os.path.join(
                 settings.DOWNLOAD_PATH, self.video_id, f"{self.video_id}.{extension}"
@@ -122,17 +196,15 @@ class YoutubeVideo:
 
     async def send_video(self):
 
-        # YoutubeVideo.update_metadata(self)
-        caption = f"**{self.title}**\n" + f"Автор: [{self.uploader}]({self.make_url()})"
+        config = get_config()
 
         async with TelegramClient(
-                "upload", settings.API_ID, settings.API_HASH,
+            config.session_name, config.api_id, config.api_hash,
         ) as client:
             file = await client.send_file(
-                settings.TMP_CHAT,
+                config.temp_chat,
                 self.get_full_path("mp4"),
                 thumb=self.get_full_path("jpg"),
-                caption=caption,
                 supports_streaming=True,
                 # progress_callback=progress_callback,
             )

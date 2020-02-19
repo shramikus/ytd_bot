@@ -17,11 +17,14 @@ from telegram.ext import (
 from telegram.utils.request import Request
 
 from ugc.models import Message, Profile, Video
-from ugc.uploader import utils
+from ugc import utils
+
+
+config = utils.get_config(is_bot=True)
 
 
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 
@@ -35,22 +38,6 @@ def log_errors(function):
             raise exception
 
     return inner
-
-
-def markdown_link(youtube_id):
-    link = f"https://www.youtube.com/watch?v={youtube_id}"
-    return f"[{link}]({link})"
-
-
-def existed_videos(youtube_ids):
-    dowloaded_videos = list(Video.objects.values_list("yt_id", flat=True))
-    new_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id not in dowloaded_videos]
-    old_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id in dowloaded_videos]
-
-    if not new_youtube_ids:
-        return "Videos already uploaded"
-
-    return new_youtube_ids, old_youtube_ids
 
 
 @log_errors
@@ -72,32 +59,23 @@ def do_echo(update: Update, context: CallbackContext):
         update.message.reply_text(text=reply_text)
 
 
-@log_errors
+# @log_errors
 def send_video(update: Update, context: CallbackContext):
-    assert update.effective_chat.id in settings.AUTH_USERS
+    assert update.effective_chat.id in config.auth_users
 
-    text = update.message.text.split()
+    text = update.message.text
     message = update.message.reply_text(text="Получаю информацию о списке видео")
 
-    if len(text) == 3:
-        num_videos = int(text[-1])
-        yt_ids = utils.get_ids_by_link(text[1], num=num_videos)
-    else:
-        yt_ids = utils.get_ids_by_link(text[1])
+    video_ids = utils.parse_message(text)
+    logging.info(video_ids)
 
-    yt_ids = existed_videos(yt_ids)
-
-    if isinstance(yt_ids, list):
-        logging.info(yt_ids)
-
-        yt_ids = yt_ids[0]
-
-        for i, yt_id in enumerate(yt_ids):
+    if isinstance(video_ids, list):
+        for i, yt_id in enumerate(video_ids):
             context.bot.edit_message_text(
                 chat_id=message.chat_id,
                 message_id=message.message_id,
-                text=f"Загружаю видео {i+1} из {len(yt_ids)}\n"
-                f"{markdown_link(yt_id)}",
+                text=f"Загружаю видео {i+1} из {len(video_ids)}\n"
+                f"{utils.markdown_link(yt_id)}",
                 parse_mode="Markdown",
             )
 
@@ -120,8 +98,8 @@ def send_video(update: Update, context: CallbackContext):
             )
             v.save()
 
-        success_text = f"{len(yt_ids)} видео успешно загружены\n" + "\n".join(
-            [f"{markdown_link(yt_id)}" for yt_id in yt_ids]
+        success_text = f"{len(video_ids)} видео успешно загружены\n" + "\n".join(
+            [f"{utils.markdown_link(yt_id)}" for yt_id in video_ids]
         )
         context.bot.edit_message_text(
             chat_id=message.chat_id,
@@ -130,21 +108,21 @@ def send_video(update: Update, context: CallbackContext):
             parse_mode="Markdown",
         )
 
-    elif isinstance(yt_ids, str):
-        logging.error(yt_ids)
+    elif isinstance(video_ids, str):
+
         context.bot.edit_message_text(
-            chat_id=message.chat_id, message_id=message.message_id, text=yt_ids
+            chat_id=message.chat_id, message_id=message.message_id, text=video_ids
         )
 
 
 @log_errors
 def send_post_context(context: CallbackContext, video_id=None):
-    chat_id = settings.CHANNEL
+    chat_id = config.posting_channel
     if video_id:
         v = Video.objects.get(yt_id=video_id)
     else:
         v = Video.objects.order_by("status", "-upload_date")[0]
-    print(v.tg_id, v.status)
+    logging.info("Видео опубликовано %s", v.title)
     caption = "*" + v.title + "*" + "\n" + f"Автор: [{v.uploader}]({v.yt_url})"
     v.status += 1
     v.save()
@@ -154,7 +132,7 @@ def send_post_context(context: CallbackContext, video_id=None):
 
 @log_errors
 def send_post(update: Update, context: CallbackContext):
-    assert update.effective_chat.id in settings.AUTH_USERS
+    assert update.effective_chat.id in config.auth_users
     text = update.message.text.split()[1:]
     if len(text) == 2:
         h = int(text[1].split(":")[0])
@@ -178,7 +156,7 @@ def send_post(update: Update, context: CallbackContext):
 
 @log_errors
 def job_maker(update: Update, context: CallbackContext):
-    assert update.effective_chat.id in settings.AUTH_USERS
+    assert update.effective_chat.id in config.auth_users
     text = update.message.text.split()[1:]
     try:
         interval = int(text[0])
@@ -222,7 +200,7 @@ def unset(update: Update, context: CallbackContext):
 
 
 @log_errors
-def help_command(update: Update):
+def help_command(update: Update, context: CallbackContext):
 
     text = (
         "Список комманд:\n"
@@ -241,7 +219,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         request = Request(connect_timeout=5, read_timeout=5, con_pool_size=8)
-        bot = Bot(request=request, token=settings.BOT_TOKEN,)
+        bot = Bot(request=request, token=config.bot_token)
         print(bot.get_me())
 
         updater = Updater(bot=bot, use_context=True)

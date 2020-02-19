@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from keys import Params
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +24,7 @@ SECRET_KEY = '!k5g2b^@qmkxmbnt1ooc3%)yuryyka-j7@_gf3ws#k%q5o+b8r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', Params.HOST]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '176.107.130.234']
 
 # Application definition
 
@@ -105,10 +104,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = '/home/www/ytd_bot/static/'
 
 # Настройки бота
-BOT_TOKEN = Params.BOT_TOKEN
-API_ID = Params.API_ID
-API_HASH = Params.API_HASH
-AUTH_USERS = Params.AUTH_USERS
-TMP_CHAT = Params.TMP_CHAT
-CHANNEL = Params.CHANNEL
+
 DOWNLOAD_PATH = 'DOWNLOADS'

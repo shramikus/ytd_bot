@@ -6,6 +6,7 @@ from .models import Profile
 from .models import Video
 from .models import AppConfig
 from .models import Playlist
+from .models import Schedule
 
 
 @admin.register(AppConfig)
@@ -42,3 +43,7 @@ class VideoAdmin(admin.ModelAdmin):
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
     list_display = ("id", "playlist_name", "playlist_url", "update_time")
+
+@admin.register(Schedule)
+class ScheduleAdmin(admin.ModelAdmin):
+    list_display = ("id", "post_type", "data", "post_time")

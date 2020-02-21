@@ -146,6 +146,7 @@ class Video(models.Model):
     likes = models.PositiveIntegerField(
         verbose_name="Лайки", default=0, blank=True, null=True
     )
+    hot = models.FloatField(verbose_name="Новинка", default=False)
 
     def show_url(self):
         return format_html(
@@ -172,7 +173,7 @@ class Playlist(models.Model):
     update_time = models.DateTimeField(
         verbose_name="Последняя проверка", blank=True, null=True
     )
-    # date_after = models.DateField(verbose_name="Граница", auto_now_add=True)
+    active = models.FloatField(verbose_name="Активный", default=False)
 
     class Meta:
         verbose_name = "Плейлист"
@@ -182,3 +183,20 @@ class Playlist(models.Model):
         if self.playlist_name:
             return f"{self.playlist_name}"
         return f"{self.playlist_url}"
+
+
+class Schedule(models.Model):
+    post_type = models.CharField(
+        verbose_name="Тип публикации", max_length=255, blank=True, null=True
+    )
+    data = models.TextField(verbose_name="Сообщение", blank=True, null=True)
+    post_time = models.DateTimeField(
+        verbose_name="Время Публикации", blank=True, null=True
+    )
+
+    class Meta:
+        verbose_name = "Расписание"
+        verbose_name_plural = "Расписания"
+
+    def __str__(self):
+        return f"{self.post_type}:{self.data}:{self:post_time}"

@@ -13,10 +13,11 @@ from telegram.ext import (
     Filters,
     MessageHandler,
     Updater,
+    JobQueue,
 )
 from telegram.utils.request import Request
 
-from ugc.models import Message, Profile, Video, Playlist
+from ugc.models import Message, Profile, Video, Playlist, Schedule
 from ugc import utils
 
 
@@ -64,15 +65,12 @@ def do_echo(update: Update, context: CallbackContext):
             update.message.reply_text(text=reply_text)
         else:
             message = Message(
-                profile=profile,
-                text=parsed_message[1],
-                message_type=parsed_message[0],
+                profile=profile, text=parsed_message[1], message_type=parsed_message[0],
             )
 
         message.save()
 
 
-@log_errors
 def send_post_context(context: CallbackContext, video_id=None):
     chat_id = config.posting_channel
     if video_id:
@@ -80,16 +78,25 @@ def send_post_context(context: CallbackContext, video_id=None):
     else:
         v = Video.objects.order_by("status", "-upload_date")[0]
     logging.info("Видео опубликовано %s", v.title)
-    caption = "*" + v.title + "*" + "\n" + f"Автор: [{v.uploader}]({v.yt_url})"
+    caption = (
+        f"*{v.title}*\n"
+        f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
+    )
     v.status += 1
     v.save()
+
+    try:
+        job = Schedule.objects.get(data=video_id)
+        job.delete()
+    except:
+        pass
 
     context.bot.send_video(chat_id, v.tg_id, caption=caption, parse_mode="Markdown")
 
 
-@log_errors
-def send_post(update: Update, context: CallbackContext):
+def send_post(update: Update, context: CallbackContext, push_data=None):
     assert update.effective_chat.id in config.auth_users
+
     text = update.message.text.split()[1:]
     if len(text) == 2:
         h = int(text[1].split(":")[0])
@@ -111,7 +118,6 @@ def send_post(update: Update, context: CallbackContext):
         )
 
 
-@log_errors
 def job_maker(update: Update, context: CallbackContext):
     assert update.effective_chat.id in config.auth_users
     text = update.message.text.split()[1:]
@@ -143,7 +149,6 @@ def job_maker(update: Update, context: CallbackContext):
         update.message.reply_text("Используй: /set <интервал> <начало>")
 
 
-@log_errors
 def unset(update: Update, context: CallbackContext):
     if "job" not in context.chat_data:
         update.message.reply_text("Автопубликации не настроены")
@@ -156,7 +161,6 @@ def unset(update: Update, context: CallbackContext):
     update.message.reply_text("Автопубликация выключена")
 
 
-@log_errors
 def help_command(update: Update, context: CallbackContext):
 
     text = (
@@ -171,6 +175,39 @@ def help_command(update: Update, context: CallbackContext):
     update.message.reply_text(text=text)
 
 
+def upload_hot_video(context: CallbackContext):
+    videos = Video.objects.filter(hot=True, tg_id__isnull=False, status=0)
+
+    context.job_queue.run_once(
+        setup_job_queue, 1,
+    )
+
+    v = videos.first()
+
+    if v:
+        caption = (
+            f"*{v.title}*\n"
+            f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
+        )
+        v.status += 1
+        v.save()
+
+        context.bot.send_video(
+            config.posting_channel, v.tg_id, caption=caption, parse_mode="Markdown"
+        )
+
+
+def setup_job_queue(context: CallbackContext):
+    jobs = Schedule.objects.all()
+    for job in jobs:
+        existed_jobs = [j.name for j in context.job_queue.jobs()]
+
+        if job.data not in existed_jobs:
+            context.job_queue.run_once(
+                lambda x: send_post_context(x, job.data), job.post_time, name=job.data
+            )
+
+
 class Command(BaseCommand):
     help = "Телеграм-бот"
 
@@ -179,7 +216,13 @@ class Command(BaseCommand):
         bot = Bot(request=request, token=config.bot_token)
         print(bot.get_me())
 
+        job_queue = JobQueue()
         updater = Updater(bot=bot, use_context=True)
+
+        job_queue.set_dispatcher(updater.dispatcher)
+        job_queue.run_repeating(upload_hot_video, 20, name="hot")
+        job_queue.start()
+
         message_handler = MessageHandler(Filters.text, do_echo)
         updater.dispatcher.add_handler(CommandHandler("help", help_command))
         updater.dispatcher.add_handler(CommandHandler("send", send_post))

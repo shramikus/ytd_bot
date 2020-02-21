@@ -68,13 +68,7 @@ def get_ids_by_link(link, num=None, date_after=None):
             format_date(date_after),
             link,
         ]
-    # else:
-    #     command = [
-    #         "youtube-dl",
-    #         "--get-id",
-    #         "--skip-download",
-    #         link,
-    #     ]
+
     edit = lambda x: x.strip().decode("utf-8")
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

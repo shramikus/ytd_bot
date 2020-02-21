@@ -24,9 +24,9 @@ def create_playlist(message):
     logging.info("Плейлист добавлен: %s", message.text)
     return playlist
 
-def create_video(video_id, playlist=None):
+def create_video(video_id, playlist=None, hot=False):
     video = Video(
-        yt_id=video_id, playlist=playlist
+        yt_id=video_id, playlist=playlist, hot=hot
     )
     video.save()
     logging.info("Видео добавлено: %s", video_id)
@@ -44,12 +44,17 @@ def playlists_check():
 
         filtred_videos = utils.existed_videos(playlist_videos)
 
+        if playlist.active:
+            hot = True
+        else:
+            hot = False
+
         if isinstance(filtred_videos, str):
             logging.warning("%s", filtred_videos)
 
         else:
             for video_id in filtred_videos:
-                create_video(video_id, playlist=playlist)
+                create_video(video_id, playlist=playlist, hot=True)
     
         playlist.update_time = datetime.now(tz=timezone.utc)
         playlist.save()

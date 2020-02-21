@@ -11,7 +11,7 @@ from telethon import TelegramClient, utils
 from ugc.models import AppConfig, Video
 
 logging.basicConfig(
-    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
+    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
 )
 
 

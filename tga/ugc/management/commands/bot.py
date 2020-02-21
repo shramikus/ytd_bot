@@ -161,8 +161,8 @@ def help_command(update: Update, context: CallbackContext):
 
     text = (
         "Список комманд:\n"
-        "/video <ссылка на видео/канал/плейлист> "
-        "<опционально, колличество видео для загрузки>\n"
+        "/video <видео/канал/плейлист> - загрузить видео\n"
+        "/playlist <канал/плейлист> - мониторинг новых видео"
         "/send <id видео> <время отправки>\n"
         "/set <интервал> <начало>\n"
         "/unset - убрать расписание"
@@ -182,7 +182,7 @@ class Command(BaseCommand):
         updater = Updater(bot=bot, use_context=True)
         message_handler = MessageHandler(Filters.text, do_echo)
         updater.dispatcher.add_handler(CommandHandler("help", help_command))
-        # updater.dispatcher.add_handler(CommandHandler("send", send_post))
+        updater.dispatcher.add_handler(CommandHandler("send", send_post))
         updater.dispatcher.add_handler(CommandHandler("set", job_maker))
         updater.dispatcher.add_handler(CommandHandler("unset", unset))
         updater.dispatcher.add_handler(message_handler)

@@ -15,7 +15,7 @@ pipelines:
             - echo "Deploy new code $BITBUCKET_COMMIT"
             - ssh -i /opt/atlassian/pipelines/agent/ssh/id_rsa -o 'StrictHostKeyChecking=no' root@176.107.130.234 "cd /home/www/ytd_bot && git fetch && git checkout -f $BITBUCKET_COMMIT" # путь до ssh-ключа отличается от дефолтного
             - echo "Restart Bot"
-            - ssh -i /opt/atlassian/pipelines/agent/ssh/id_rsa -o 'StrictHostKeyChecking=no' root@176.107.130.234 "systemctl restart tgbot && sleep 3 && systemctl status tgbot"
+            - ssh -i /opt/atlassian/pipelines/agent/ssh/id_rsa -o 'StrictHostKeyChecking=no' root@176.107.130.234 "systemctl restart tgbot && systemctl restart tguploader && systemctl restart tgmonitor"
             - echo "Restart Admin"
             - ssh -i /opt/atlassian/pipelines/agent/ssh/id_rsa -o 'StrictHostKeyChecking=no' root@176.107.130.234 "systemctl restart tgadmin && sleep 3 && systemctl status tgadmin"
 

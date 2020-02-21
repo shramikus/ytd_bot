@@ -146,7 +146,7 @@ class Video(models.Model):
     likes = models.PositiveIntegerField(
         verbose_name="Лайки", default=0, blank=True, null=True
     )
-    hot = models.FloatField(verbose_name="Новинка", default=False)
+    hot = models.BooleanField(verbose_name="Новинка", default=False)
 
     def show_url(self):
         return format_html(
@@ -173,7 +173,7 @@ class Playlist(models.Model):
     update_time = models.DateTimeField(
         verbose_name="Последняя проверка", blank=True, null=True
     )
-    active = models.FloatField(verbose_name="Активный", default=False)
+    active = models.BooleanField(verbose_name="Активный", default=False)
 
     class Meta:
         verbose_name = "Плейлист"

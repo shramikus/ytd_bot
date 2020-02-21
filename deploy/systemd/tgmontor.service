@@ -1,0 +1,13 @@
+[Unit]
+Description=Telegram monitor daemon
+After=network.target
+
+[Service]
+User=www
+Group=www
+WorkingDirectory=/home/www/ytd_bot/
+Environment="PYTHONPATH=/home/www/ytd_bot/"
+ExecStart=/home/www/ytd_bot/.venv/bin/python /home/www/ytd_bot/tga/manage.py monitor
+
+[Install]
+WantedBy=multi-user.target

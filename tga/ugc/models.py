@@ -99,6 +99,10 @@ class Message(models.Model):
         to="ugc.Profile", verbose_name="Профиль", on_delete=models.PROTECT
     )
     text = models.TextField(verbose_name="Текст")
+    message_type = models.CharField(
+        verbose_name="Тип", max_length=255, blank=True, null=True
+    )
+    status = models.BooleanField(verbose_name="Проверено", blank=True, null=True)
     created_at = models.DateTimeField(verbose_name="Время получения", auto_now_add=True)
 
     def __str__(self):
@@ -110,21 +114,45 @@ class Message(models.Model):
 
 
 class Video(models.Model):
-    yt_id = models.CharField(verbose_name="Id видео", max_length=11, unique=True)
-    yt_url = models.URLField(verbose_name="Ссылка на видео")
-    title = models.TextField(verbose_name="Название видео")
-    uploader = models.CharField(verbose_name="Канал отправителя", max_length=150)
-    upload_date = models.DateField(verbose_name="Дата публикации")
-    view_count = models.PositiveIntegerField(verbose_name="Просмотров")
-    rating = models.FloatField(verbose_name="Рейтинг")
-    tg_id = models.CharField(verbose_name="Id в телеграме", max_length=50)
-    status = models.PositiveIntegerField(verbose_name="Статус", default=0)
-    tags = models.TextField(verbose_name="Теги", default="")
-    categories = models.TextField(verbose_name="Категории", default="")
-    likes = models.PositiveIntegerField(verbose_name="Лайки", default=0)
+    playlist = models.ForeignKey(
+        to="ugc.Playlist",
+        verbose_name="Плейлист",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    yt_id = models.CharField(verbose_name="Id видео", max_length=255, unique=True)
+    title = models.TextField(verbose_name="Название видео", blank=True, null=True)
+    uploader = models.CharField(
+        verbose_name="Канал отправителя", max_length=255, blank=True, null=True
+    )
+    upload_date = models.DateField(
+        verbose_name="Дата публикации", blank=True, null=True
+    )
+    view_count = models.PositiveIntegerField(
+        verbose_name="Просмотров", blank=True, null=True
+    )
+    rating = models.FloatField(verbose_name="Рейтинг", blank=True, null=True)
+    tg_id = models.CharField(
+        verbose_name="Id в телеграме", max_length=255, blank=True, null=True
+    )
+    status = models.PositiveIntegerField(
+        verbose_name="Статус", default=0, blank=True, null=True
+    )
+    tags = models.TextField(verbose_name="Теги", default="", blank=True, null=True)
+    categories = models.TextField(
+        verbose_name="Категории", default="", blank=True, null=True
+    )
+    likes = models.PositiveIntegerField(
+        verbose_name="Лайки", default=0, blank=True, null=True
+    )
 
     def show_url(self):
-        return format_html('<a href="{}">{}</a>'.format(self.yt_url, self.yt_url))
+        return format_html(
+            '<a href="https://www.youtube.com/watch?v={}">{}</a>'.format(
+                self.yt_id, self.yt_id
+            )
+        )
 
     show_url.allow_tags = True
 
@@ -134,3 +162,23 @@ class Video(models.Model):
     class Meta:
         verbose_name = "Видео"
         verbose_name_plural = "Видео"
+
+
+class Playlist(models.Model):
+    playlist_name = models.CharField(
+        verbose_name="Название", max_length=255, blank=True, null=True
+    )
+    playlist_url = models.URLField(verbose_name="Ссылка на плейлист")
+    update_time = models.DateTimeField(
+        verbose_name="Последняя проверка", blank=True, null=True
+    )
+    # date_after = models.DateField(verbose_name="Граница", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Плейлист"
+        verbose_name_plural = "Плейлисты"
+
+    def __str__(self):
+        if self.playlist_name:
+            return f"{self.playlist_name}"
+        return f"{self.playlist_url}"

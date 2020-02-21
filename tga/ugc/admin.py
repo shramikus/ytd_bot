@@ -5,6 +5,7 @@ from .models import Message
 from .models import Profile
 from .models import Video
 from .models import AppConfig
+from .models import Playlist
 
 
 @admin.register(AppConfig)
@@ -22,8 +23,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("id", "profile", "text", "created_at")
-    # pass
+    list_display = ("id", "profile", "message_type", "text", "status", "created_at")
 
 
 @admin.register(Video)
@@ -37,3 +37,8 @@ class VideoAdmin(admin.ModelAdmin):
         "rating",
         "status",
     )
+
+
+@admin.register(Playlist)
+class PlaylistAdmin(admin.ModelAdmin):
+    list_display = ("id", "playlist_name", "playlist_url", "update_time")

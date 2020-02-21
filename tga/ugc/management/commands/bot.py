@@ -16,11 +16,11 @@ from telegram.ext import (
 )
 from telegram.utils.request import Request
 
-from ugc.models import Message, Profile, Video
+from ugc.models import Message, Profile, Video, Playlist
 from ugc import utils
 
 
-config = utils.get_config(is_bot=True)
+config = utils.get_bot_config(is_bot=True)
 
 
 logging.basicConfig(
@@ -50,69 +50,26 @@ def do_echo(update: Update, context: CallbackContext):
         profile, _ = Profile.objects.get_or_create(
             external_id=message_chat_id, defaults={"name": message_username}
         )
-        message = Message(profile=profile, text=message_text)
+
+        parsed_message = utils.parse_message(message_text)
+        if parsed_message[0] != "message":
+            assert update.effective_chat.id in config.auth_users
+            message = Message(
+                profile=profile,
+                text=parsed_message[1],
+                message_type=parsed_message[0],
+                status=False,
+            )
+            reply_text = f"Принято\ntype: {parsed_message[0]}"
+            update.message.reply_text(text=reply_text)
+        else:
+            message = Message(
+                profile=profile,
+                text=parsed_message[1],
+                message_type=parsed_message[0],
+            )
+
         message.save()
-
-        reply_text = (
-            f"Принято\n" f"chat_id: {message_chat_id}\n" f"username: {message_username}"
-        )
-        update.message.reply_text(text=reply_text)
-
-
-# @log_errors
-def send_video(update: Update, context: CallbackContext):
-    assert update.effective_chat.id in config.auth_users
-
-    text = update.message.text
-    message = update.message.reply_text(text="Получаю информацию о списке видео")
-
-    video_ids = utils.parse_message(text)
-    logging.info(video_ids)
-
-    if isinstance(video_ids, list):
-        for i, yt_id in enumerate(video_ids):
-            context.bot.edit_message_text(
-                chat_id=message.chat_id,
-                message_id=message.message_id,
-                text=f"Загружаю видео {i+1} из {len(video_ids)}\n"
-                f"{utils.markdown_link(yt_id)}",
-                parse_mode="Markdown",
-            )
-
-            video = utils.YoutubeVideo(yt_id)
-            asyncio.run(video.send_video())
-            v = Video(
-                yt_id=video.video_id,
-                title=video.title,
-                uploader=video.uploader,
-                upload_date=timezone.get_current_timezone().localize(
-                    datetime.strptime(video.upload_date, "%Y%m%d")
-                ),
-                view_count=video.view_count,
-                tg_id=video.tg_id,
-                rating=video.average_rating,
-                yt_url=video.make_url(),
-                tags=video.tags,
-                categories=video.categories,
-                likes=video.like_count,
-            )
-            v.save()
-
-        success_text = f"{len(video_ids)} видео успешно загружены\n" + "\n".join(
-            [f"{utils.markdown_link(yt_id)}" for yt_id in video_ids]
-        )
-        context.bot.edit_message_text(
-            chat_id=message.chat_id,
-            message_id=message.message_id,
-            text=success_text,
-            parse_mode="Markdown",
-        )
-
-    elif isinstance(video_ids, str):
-
-        context.bot.edit_message_text(
-            chat_id=message.chat_id, message_id=message.message_id, text=video_ids
-        )
 
 
 @log_errors
@@ -225,8 +182,7 @@ class Command(BaseCommand):
         updater = Updater(bot=bot, use_context=True)
         message_handler = MessageHandler(Filters.text, do_echo)
         updater.dispatcher.add_handler(CommandHandler("help", help_command))
-        updater.dispatcher.add_handler(CommandHandler("video", send_video))
-        updater.dispatcher.add_handler(CommandHandler("send", send_post))
+        # updater.dispatcher.add_handler(CommandHandler("send", send_post))
         updater.dispatcher.add_handler(CommandHandler("set", job_maker))
         updater.dispatcher.add_handler(CommandHandler("unset", unset))
         updater.dispatcher.add_handler(message_handler)

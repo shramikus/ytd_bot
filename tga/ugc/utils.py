@@ -5,10 +5,10 @@ import shutil
 import subprocess
 
 # import time
-
-from ugc.models import AppConfig, Video
 from django.conf import settings
 from telethon import TelegramClient, utils
+
+from ugc.models import AppConfig, Video
 
 logging.basicConfig(
     format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
@@ -20,54 +20,36 @@ def markdown_link(youtube_id):
     return f"[{link}]({link})"
 
 
-def parse_message(text):
-    query = text.split()
+def parse_message(message):
+    if message.startswith('/video'):
+        message = message[len('/video')+1:]
+        return "video", message
 
-    if query[0] == "/video":
-        query = query[1:]
+    elif message.startswith('/playlist'):
+        message = message[len('/playlist')+1:]
+        return "playlist", message
 
-        if len(query) == 0:
-            return "Укажите видео"
-
-        if len(query) == 1:
-            link = query[0]
-            return existed_videos(get_ids_by_link(link))
-
-        if len(query) == 2 and query[1].isdigit():
-            link = query[0]
-            num_videos = query[1]
-            return existed_videos(get_ids_by_link(link, num_videos))
-
-        if len(query) >= 2:
-            video_ids = []
-            error_messages = []
-
-            for link in query:
-                ids = get_ids_by_link(link)
-                if isinstance(ids, list):
-                    video_ids += ids
-                elif isinstance(ids, str):
-                    error_messages.append(ids)
-
-            if video_ids:
-                return existed_videos(video_ids)
-
-            unique_error_messages = set(error_messages)
-            final_message = "\n".join(unique_error_messages)
-            return final_message
+    else:
+        return "message", message
 
 
 def existed_videos(youtube_ids):
+    if isinstance(youtube_ids, str):
+        return youtube_ids
     dowloaded_videos = list(Video.objects.values_list("yt_id", flat=True))
     new_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id not in dowloaded_videos]
-    # old_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id in dowloaded_videos]
     if not new_youtube_ids:
-        return "Видео уже загружено"
+        return "Нет новых видео"
 
     return new_youtube_ids
 
+def format_date(date):
+    return date.strftime("%Y%m%d")
 
-def get_ids_by_link(link, num=None):
+def get_ids_by_link(link, num=None, date_after=None):
+    if date_after is None and num is None:
+        num = 5
+
     if num:
         command = [
             "youtube-dl",
@@ -77,13 +59,22 @@ def get_ids_by_link(link, num=None):
             str(num),
             link,
         ]
-    else:
+    elif date_after:
         command = [
             "youtube-dl",
             "--get-id",
             "--skip-download",
+            "--dateafter",
+            format_date(date_after),
             link,
         ]
+    # else:
+    #     command = [
+    #         "youtube-dl",
+    #         "--get-id",
+    #         "--skip-download",
+    #         link,
+    #     ]
     edit = lambda x: x.strip().decode("utf-8")
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -95,10 +86,11 @@ def get_ids_by_link(link, num=None):
         encoded_stderr = str(stderr if stderr else "")
     if encoded_stderr:
         return encoded_stderr
+    print(stdout)
     return stdout
 
 
-def get_config(is_bot=False):
+def get_bot_config(is_bot=False):
     if is_bot:
         configs = AppConfig.objects.filter(is_bot=True, is_active=True)
         config = configs[0]
@@ -196,10 +188,10 @@ class YoutubeVideo:
 
     async def send_video(self):
 
-        config = get_config()
+        config = get_bot_config()
 
         async with TelegramClient(
-            config.session_name, config.api_id, config.api_hash,
+                config.session_name, config.api_id, config.api_hash,
         ) as client:
             file = await client.send_file(
                 config.temp_chat,

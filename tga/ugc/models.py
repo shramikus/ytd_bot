@@ -234,4 +234,4 @@ class Schedule(models.Model):
         verbose_name_plural = "Расписания"
 
     def __str__(self):
-        return f"{self.post_type}:{self.data}:{self:post_time}"
+        return f"{self.post_type}:{self.post_time.strftime('%H:%M %d-%m')}"

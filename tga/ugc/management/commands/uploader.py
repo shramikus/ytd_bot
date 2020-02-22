@@ -8,20 +8,24 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db.models import Q
 
-from ugc.models import Message, Video, Playlist
+from ugc.models import Video
 from ugc import utils
 
 
 logging.basicConfig(
-    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
+    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
 )
 
 
 def get_videos():
-    videos = Video.objects.filter(tg_id__isnull=True)
+    videos = Video.objects.filter(Q(tg_id__isnull=True) | Q(tg_id=""))
+    print(videos)
     for v in videos:
         video = utils.YoutubeVideo(v.yt_id)
-        asyncio.run(video.send_video())
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(video.send_video())
+
         logging.info("Видео загружено %s", v.yt_id)
 
         v.title = video.title

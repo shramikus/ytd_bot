@@ -4,14 +4,14 @@ import os
 import shutil
 import subprocess
 
-# import time
+import time
 from django.conf import settings
 from telethon import TelegramClient, utils
 
 from ugc.models import AppConfig, Video
 
 logging.basicConfig(
-    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
+    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
 )
 
 
@@ -21,16 +21,19 @@ def markdown_link(youtube_id):
 
 
 def parse_message(message):
-    if message.startswith('/video'):
-        message = message[len('/video')+1:]
+    if message.startswith("/video"):
+        message = message[len("/video") + 1 :]
         return "video", message
 
-    elif message.startswith('/playlist'):
-        message = message[len('/playlist')+1:]
+    if message.startswith("/playlist"):
+        message = message[len("/playlist") + 1 :]
         return "playlist", message
 
-    else:
-        return "message", message
+    if message.startswith("/schedule"):
+        message = message[len("/schedule") + 1 :]
+        return "schedule", message
+
+    return "message", message
 
 
 def existed_videos(youtube_ids):
@@ -43,8 +46,10 @@ def existed_videos(youtube_ids):
 
     return new_youtube_ids
 
+
 def format_date(date):
     return date.strftime("%Y%m%d")
+
 
 def get_ids_by_link(link, num=None, date_after=None):
     if date_after is None and num is None:
@@ -180,13 +185,23 @@ class YoutubeVideo:
             self.like_count = j_data["like_count"]
             self.average_rating = j_data["average_rating"]
 
-    async def send_video(self):
+    async def session_login(self, client, config):
+        if not await client.is_user_authorized():
+            logging.info("Требуется авторизация номера %s", config.client_phone)
+            await client.send_code_request(config.client_phone)
+            while not config.client_code:
+                time.sleep(30)
+                config = get_bot_config()
+            await client.sign_in(config.client_phone, config.client_code)
 
+    async def send_video(self):
         config = get_bot_config()
 
-        async with TelegramClient(
-                config.session_name, config.api_id, config.api_hash,
-        ) as client:
+        client = TelegramClient(config.session_name, config.api_id, config.api_hash,)
+        await client.connect()
+        await self.session_login(client, config)
+
+        async with client:
             file = await client.send_file(
                 config.temp_chat,
                 self.get_full_path("mp4"),

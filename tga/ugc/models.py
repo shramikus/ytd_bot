@@ -46,6 +46,20 @@ class AppConfig(models.Model):
         "use @botfather for create a bot or get token for available bot.",
     )
 
+    client_phone = models.CharField(
+        max_length=255,
+        default=None,
+        null=True,
+        blank=True,
+        help_text="Телефон аккаунта, с которого загружаются видео для авторизации."
+    )
+    client_code = models.CharField(
+        max_length=255,
+        default=None,
+        null=True,
+        blank=True,
+        help_text="Код авторизации."
+    )
     posting_channel = models.CharField(
         max_length=255,
         default="-1001317892207",
@@ -146,7 +160,7 @@ class Video(models.Model):
     likes = models.PositiveIntegerField(
         verbose_name="Лайки", default=0, blank=True, null=True
     )
-    hot = models.BooleanField(verbose_name="Новинка", default=False)
+    hot = models.BooleanField(verbose_name="Новинка", default=False, null=True)
 
     def show_url(self):
         return format_html(
@@ -173,7 +187,7 @@ class Playlist(models.Model):
     update_time = models.DateTimeField(
         verbose_name="Последняя проверка", blank=True, null=True
     )
-    active = models.BooleanField(verbose_name="Активный", default=False)
+    active = models.BooleanField(verbose_name="Активный", default=False, null=True)
 
     class Meta:
         verbose_name = "Плейлист"
@@ -186,13 +200,33 @@ class Playlist(models.Model):
 
 
 class Schedule(models.Model):
+    POST_TYPES = [("msg", "Message"), ("vid", "Video"), ("im", "Image")]
+
     post_type = models.CharField(
-        verbose_name="Тип публикации", max_length=255, blank=True, null=True
+        verbose_name="Тип публикации",
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=POST_TYPES,
     )
-    data = models.TextField(verbose_name="Сообщение", blank=True, null=True)
+    data = models.TextField(
+        verbose_name="Данные",
+        blank=True,
+        null=True,
+        help_text="Video: youtube id или несколько (через пробел) видео из нашей базы. "
+        "Message: оставить пустым. "
+        "Image: ссылка или несколько на изображение",
+    )
+    message = models.TextField(
+        verbose_name="Текст описания",
+        blank=True,
+        null=True,
+        help_text="Сообщение в markdown формате. https://core.telegram.org/bots/api#markdown-style",
+    )
     post_time = models.DateTimeField(
         verbose_name="Время Публикации", blank=True, null=True
     )
+    active = models.BooleanField(verbose_name="Активный", default=False, null=True)
 
     class Meta:
         verbose_name = "Расписание"

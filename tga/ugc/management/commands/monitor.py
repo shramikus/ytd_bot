@@ -17,20 +17,18 @@ logging.basicConfig(
 
 
 def create_playlist(message):
-    playlist = Playlist(
-        playlist_url=message.text
-    )
+    playlist = Playlist(playlist_url=message.text)
     playlist.save()
     logging.info("Плейлист добавлен: %s", message.text)
     return playlist
 
-def create_video(video_id, playlist=None, hot=False):
-    video = Video(
-        yt_id=video_id, playlist=playlist, hot=hot
-    )
+
+def create_video(video_id, playlist=None):
+    video = Video(yt_id=video_id, playlist=playlist, hot=playlist.active)
     video.save()
     logging.info("Видео добавлено: %s", video_id)
     return video
+
 
 def playlists_check():
     playlists = Playlist.objects.all()
@@ -44,36 +42,27 @@ def playlists_check():
 
         filtred_videos = utils.existed_videos(playlist_videos)
 
-        if playlist.active:
-            hot = True
-        else:
-            hot = False
-
         if isinstance(filtred_videos, str):
             logging.warning("%s", filtred_videos)
 
         else:
             for video_id in filtred_videos:
-                create_video(video_id, playlist=playlist, hot=True)
-    
+                create_video(video_id, playlist=playlist)
+
         playlist.update_time = datetime.now(tz=timezone.utc)
         playlist.save()
 
 
 def messages_check():
     try:
-        messages = Message.objects.filter(
-                Q(status=False) & ~Q(message_type="message")
-            )
+        messages = Message.objects.filter(Q(status=False) & ~Q(message_type="message"))
     except:
         messages = []
     logging.info("Обработка сообщений %s", list(messages))
 
-
     for message in messages:
         if message.message_type == "playlist":
             create_playlist(message)
-
 
         elif message.message_type == "video":
             video_ids = utils.get_ids_by_link(message.text)
@@ -87,6 +76,7 @@ def messages_check():
 
         message.status = True
         message.save()
+
 
 class Command(BaseCommand):
     help = "Мониторинг сообщений"

@@ -1,10 +1,9 @@
-import asyncio
 import logging
 from datetime import datetime
 
 # from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils import timezone
+# from django.utils import timezone
 
 from telegram import Bot, Update
 from telegram.ext import (
@@ -17,7 +16,7 @@ from telegram.ext import (
 )
 from telegram.utils.request import Request
 
-from ugc.models import Message, Profile, Video, Playlist, Schedule
+from ugc.models import Message, Profile, Video, Schedule
 from ugc import utils
 
 
@@ -41,7 +40,6 @@ def log_errors(function):
     return inner
 
 
-@log_errors
 def do_echo(update: Update, context: CallbackContext):
     if update.effective_chat.type == "private":
         message_chat_id = update.effective_chat.id
@@ -72,12 +70,13 @@ def do_echo(update: Update, context: CallbackContext):
 
 
 def send_post_context(context: CallbackContext, video_id=None):
-    chat_id = config.posting_channel
+
     if video_id:
         v = Video.objects.get(yt_id=video_id)
     else:
-        v = Video.objects.order_by("status", "-upload_date")[0]
-    logging.info("Видео опубликовано %s", v.title)
+        v = Video.objects.order_by("status", "-upload_date").first()
+    
+    
     caption = (
         f"*{v.title}*\n"
         f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
@@ -91,7 +90,10 @@ def send_post_context(context: CallbackContext, video_id=None):
     except:
         pass
 
-    context.bot.send_video(chat_id, v.tg_id, caption=caption, parse_mode="Markdown")
+    context.bot.send_video(
+        config.posting_channel, v.tg_id, caption=caption, parse_mode="Markdown"
+    )
+    logging.info("Видео опубликовано %s", v.title)
 
 
 def send_post(update: Update, context: CallbackContext, push_data=None):
@@ -162,7 +164,6 @@ def unset(update: Update, context: CallbackContext):
 
 
 def help_command(update: Update, context: CallbackContext):
-
     text = (
         "Список комманд:\n"
         "/video <видео/канал/плейлист> - загрузить видео\n"
@@ -177,11 +178,6 @@ def help_command(update: Update, context: CallbackContext):
 
 def upload_hot_video(context: CallbackContext):
     videos = Video.objects.filter(hot=True, tg_id__isnull=False, status=0)
-
-    context.job_queue.run_once(
-        setup_job_queue, 1,
-    )
-
     v = videos.first()
 
     if v:
@@ -197,7 +193,7 @@ def upload_hot_video(context: CallbackContext):
         )
 
 
-def setup_job_queue(context: CallbackContext):
+def setup_schedule(context: CallbackContext):
     jobs = Schedule.objects.all()
     for job in jobs:
         existed_jobs = [j.name for j in context.job_queue.jobs()]
@@ -220,7 +216,8 @@ class Command(BaseCommand):
         updater = Updater(bot=bot, use_context=True)
 
         job_queue.set_dispatcher(updater.dispatcher)
-        job_queue.run_repeating(upload_hot_video, 20, name="hot")
+        job_queue.run_repeating(upload_hot_video, 60, name="hot")
+        job_queue.run_repeating(setup_schedule, 300, name="schedule_setup")
         job_queue.start()
 
         message_handler = MessageHandler(Filters.text, do_echo)

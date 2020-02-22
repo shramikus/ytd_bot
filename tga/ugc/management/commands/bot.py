@@ -198,9 +198,10 @@ def setup_schedule(context: CallbackContext):
     for job in jobs:
         existed_jobs = [j.name for j in context.job_queue.jobs()]
 
-        if job.data not in existed_jobs:
+        job_name = f"{job.post_type}_{job.data.split()[0]}"
+        if job_name not in existed_jobs:
             context.job_queue.run_once(
-                lambda x: send_post_context(x, job.data), job.post_time, name=job.data
+                lambda x: send_post_context(x, job.data), job.post_time, name=job_name
             )
 
 

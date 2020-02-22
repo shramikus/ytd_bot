@@ -200,7 +200,7 @@ class Playlist(models.Model):
 
 
 class Schedule(models.Model):
-    POST_TYPES = [("msg", "Message"), ("vid", "Video"), ("im", "Image")]
+    POST_TYPES = [("msg", "message"), ("vid", "video"), ("im", "image")]
 
     post_type = models.CharField(
         verbose_name="Тип публикации",
@@ -208,6 +208,7 @@ class Schedule(models.Model):
         blank=True,
         null=True,
         choices=POST_TYPES,
+        help_text="Пока что работает только video. Казать только поле данные"
     )
     data = models.TextField(
         verbose_name="Данные",

@@ -53,7 +53,7 @@ def format_date(date):
 
 def get_ids_by_link(link, num=None, date_after=None):
     if date_after is None and num is None:
-        num = 5
+        num = 3
 
     if num:
         command = [

@@ -3,6 +3,7 @@ from datetime import datetime
 
 # from django.conf import settings
 from django.core.management.base import BaseCommand
+
 # from django.utils import timezone
 
 from telegram import Bot, Update
@@ -75,8 +76,7 @@ def send_post_context(context: CallbackContext, video_id=None):
         v = Video.objects.get(yt_id=video_id)
     else:
         v = Video.objects.order_by("status", "-upload_date").first()
-    
-    
+
     caption = (
         f"*{v.title}*\n"
         f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
@@ -203,6 +203,11 @@ def setup_schedule(context: CallbackContext):
             context.job_queue.run_once(
                 lambda x: send_post_context(x, job.data), job.post_time, name=job_name
             )
+            logging.info(
+                "Видео %s добавлено в расписание, время публикации %s",
+                job.data,
+                job.post_time,
+            )
 
 
 class Command(BaseCommand):
@@ -218,7 +223,7 @@ class Command(BaseCommand):
 
         job_queue.set_dispatcher(updater.dispatcher)
         job_queue.run_repeating(upload_hot_video, 60, name="hot")
-        job_queue.run_repeating(setup_schedule, 300, name="schedule_setup")
+        job_queue.run_repeating(setup_schedule, 240, name="schedule_setup")
         job_queue.start()
 
         message_handler = MessageHandler(Filters.text, do_echo)

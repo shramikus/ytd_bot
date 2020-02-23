@@ -29,8 +29,21 @@ def create_video(video_id, playlist=None):
     logging.info("Видео добавлено: %s", video_id)
     return video
 
+def playlist_check(playlist):
+    """
+    Check one playlist.
+    """
+    playlist_url = playlist.playlist_url
+    date_after = playlist.update_time
+    
+    playlist_videos = utils.get_ids_by_link(playlist_url, date_after=date_after)
+    filtred_videos = utils.existed_videos(playlist_videos)
 
-def playlists_check():
+
+def playlists_update_checker():
+    """
+    Get a list of playlists and channels and check them for new videos.
+    """
     playlists = Playlist.objects.all()
 
     for playlist in playlists:

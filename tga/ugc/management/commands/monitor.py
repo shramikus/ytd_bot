@@ -48,10 +48,12 @@ def get_new_videos(url):
     new_videos = [video for video in received_videos if video not in existed_videos]
     return new_videos
 
+
 def get_playlist_videos(playlist):
     url = playlist.playlist_url
 
     return get_new_videos(url)
+
 
 def playlist_check(playlist):
     """
@@ -96,8 +98,8 @@ def messages_check():
         elif message.message_type == "video":
             url = message.text
             new_videos = get_new_videos(url)
-        
-        logging.info("\tNew videos: %s from %s", new_videos)
+
+        logging.info("\tNew videos: %s", new_videos)
 
         for video in new_videos:
             add_video_to_base(video)

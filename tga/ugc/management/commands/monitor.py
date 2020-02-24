@@ -32,11 +32,10 @@ def add_video_to_base(video_id, playlist=None):
     return video
 
 
-def get_new_videos(playlist):
+def get_new_videos(url):
     """
     Get new videos from playlist.
     """
-    url = playlist.playlist_url
     # dateafter = playlist.update_time
 
     existed_videos = Video.objects.values_list("yt_id", flat=True)
@@ -49,12 +48,17 @@ def get_new_videos(playlist):
     new_videos = [video for video in received_videos if video not in existed_videos]
     return new_videos
 
+def get_playlist_videos(playlist):
+    url = playlist.playlist_url
+
+    return get_new_videos(url)
 
 def playlist_check(playlist):
     """
     Check playlist for new videos and add them to database if not existed.
     """
-    new_videos = get_new_videos(playlist)
+    url = playlist.playlist_url
+    new_videos = get_new_videos(url)
     logging.info("\tNew videos: %s from %s", new_videos, playlist.playlist_name)
 
     for video in new_videos:
@@ -90,14 +94,13 @@ def messages_check():
             create_playlist(message)
 
         elif message.message_type == "video":
-            video_ids = utils.get_ids_by_link(message.text)
-            filtred_ids = utils.existed_videos(video_ids)
+            url = message.text
+            new_videos = get_new_videos(url)
+        
+        logging.info("\tNew videos: %s from %s", new_videos)
 
-            if isinstance(filtred_ids, list):
-                for video_id in filtred_ids:
-                    add_video_to_base(video_id)
-            elif isinstance(filtred_ids, str):
-                logging.warning("\t%s", filtred_ids)
+        for video in new_videos:
+            add_video_to_base(video)
 
         message.status = True
         message.save()

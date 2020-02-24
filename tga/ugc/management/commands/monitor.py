@@ -37,10 +37,10 @@ def get_new_videos(playlist):
     Get new videos from playlist.
     """
     url = playlist.playlist_url
-    dateafter = playlist.update_time
+    # dateafter = playlist.update_time
 
     existed_videos = Video.objects.values_list("yt_id", flat=True)
-    received_videos = utils.get_ids_by_link(url, date_after=dateafter)
+    received_videos = utils.get_ids_by_link(url, num=2)
 
     if isinstance(received_videos, str):
         logging.info("%s", received_videos)
@@ -55,7 +55,7 @@ def playlist_check(playlist):
     Check playlist for new videos and add them to database if not existed.
     """
     new_videos = get_new_videos(playlist)
-    logging.info("New videos: %s from %s", new_videos, playlist.playlist_name)
+    logging.info("\tNew videos: %s from %s", new_videos, playlist.playlist_name)
 
     for video in new_videos:
         add_video_to_base(video, playlist)
@@ -66,6 +66,7 @@ def playlists_update_checker():
     Get a list of playlists and channels and check them for new videos.
     """
     playlists = Playlist.objects.values_list("id", flat=True)
+    logging.info("Обработка плейлистов %s", playlists)
 
     for playlist_id in playlists:
 
@@ -84,6 +85,7 @@ def messages_check():
     logging.info("Обработка сообщений %s", list(messages))
 
     for message in messages:
+        logging.info("\t%s", message)
         if message.message_type == "playlist":
             create_playlist(message)
 
@@ -95,7 +97,7 @@ def messages_check():
                 for video_id in filtred_ids:
                     add_video_to_base(video_id)
             elif isinstance(filtred_ids, str):
-                logging.warning("%s", filtred_ids)
+                logging.warning("\t%s", filtred_ids)
 
         message.status = True
         message.save()

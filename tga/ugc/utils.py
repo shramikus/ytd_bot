@@ -41,8 +41,8 @@ def existed_videos(youtube_ids):
         return youtube_ids
     dowloaded_videos = list(Video.objects.values_list("yt_id", flat=True))
     new_youtube_ids = [yt_id for yt_id in youtube_ids if yt_id not in dowloaded_videos]
-    if not new_youtube_ids:
-        return "Нет новых видео"
+    # if not new_youtube_ids:
+    #     logging.info("")
 
     return new_youtube_ids
 
@@ -60,6 +60,8 @@ def get_ids_by_link(link, num=None, date_after=None):
             "youtube-dl",
             "--get-id",
             "--skip-download",
+            "--socket-timeout",
+            "300",
             "--playlist-end",
             str(num),
             link,
@@ -69,6 +71,8 @@ def get_ids_by_link(link, num=None, date_after=None):
             "youtube-dl",
             "--get-id",
             "--skip-download",
+            "--socket-timeout",
+            "300",
             "--dateafter",
             format_date(date_after),
             link,
@@ -85,7 +89,6 @@ def get_ids_by_link(link, num=None, date_after=None):
         encoded_stderr = str(stderr if stderr else "")
     if encoded_stderr:
         return encoded_stderr
-    print(stdout)
     return stdout
 
 

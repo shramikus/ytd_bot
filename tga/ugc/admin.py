@@ -42,8 +42,9 @@ class VideoAdmin(admin.ModelAdmin):
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ("id", "playlist_name", "playlist_url", "update_time")
+    list_display = ("id", "playlist_name", "playlist_url", "active", "update_time")
+
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("id", "post_type", "data", "post_time")
+    list_display = ("id", "post_type", "data", "active", "post_time")

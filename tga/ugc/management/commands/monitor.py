@@ -61,10 +61,13 @@ def playlist_check(playlist):
     """
     url = playlist.playlist_url
     new_videos = get_new_videos(url)
-    logging.info("\tNew videos: %s from %s", new_videos, playlist.playlist_name)
+    if new_videos:
+        logging.info("    %s. New videos: %s from %s", playlist.id, new_videos, playlist.playlist_name)
 
-    for video in new_videos:
-        add_video_to_base(video, playlist)
+        for video in new_videos:
+            add_video_to_base(video, playlist)
+        return True
+    return False
 
 
 def playlists_update_checker():
@@ -77,7 +80,9 @@ def playlists_update_checker():
     for playlist_id in playlists:
 
         playlist = Playlist.objects.get(id=playlist_id)
-        playlist_check(playlist)
+        
+        if playlist_check(playlist):
+            playlist.last_video_date = datetime.now(tz=timezone.utc)
 
         playlist.update_time = datetime.now(tz=timezone.utc)
         playlist.save()

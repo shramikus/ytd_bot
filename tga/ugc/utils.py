@@ -61,7 +61,7 @@ def get_ids_by_link(link, num=None, date_after=None):
             "--get-id",
             "--skip-download",
             "--socket-timeout",
-            "300",
+            "120",
             "--playlist-end",
             str(num),
             link,
@@ -72,7 +72,7 @@ def get_ids_by_link(link, num=None, date_after=None):
             "--get-id",
             "--skip-download",
             "--socket-timeout",
-            "300",
+            "120",
             "--dateafter",
             format_date(date_after),
             link,
@@ -88,6 +88,7 @@ def get_ids_by_link(link, num=None, date_after=None):
     except UnicodeDecodeError:
         encoded_stderr = str(stderr if stderr else "")
     if encoded_stderr:
+        logging.info("%s", encoded_stderr)
         return encoded_stderr
     return stdout
 

@@ -65,9 +65,11 @@ def playlists_update_checker():
     """
     Get a list of playlists and channels and check them for new videos.
     """
-    playlists = Playlist.objects.all()
+    playlists = Playlist.objects.values_list("id", flat=True)
 
-    for playlist in playlists:
+    for playlist_id in playlists:
+
+        playlist = Playlist.objects.get(id=playlist_id)
         playlist_check(playlist)
 
         playlist.update_time = datetime.now(tz=timezone.utc)
@@ -108,4 +110,4 @@ class Command(BaseCommand):
             messages_check()
             playlists_update_checker()
 
-            time.sleep(60)
+            time.sleep(30)

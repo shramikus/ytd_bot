@@ -51,14 +51,14 @@ class AppConfig(models.Model):
         default=None,
         null=True,
         blank=True,
-        help_text="Телефон аккаунта, с которого загружаются видео для авторизации."
+        help_text="Телефон аккаунта, с которого загружаются видео для авторизации.",
     )
     client_code = models.CharField(
         max_length=255,
         default=None,
         null=True,
         blank=True,
-        help_text="Код авторизации."
+        help_text="Код авторизации.",
     )
     posting_channel = models.CharField(
         max_length=255,
@@ -187,6 +187,9 @@ class Playlist(models.Model):
     update_time = models.DateTimeField(
         verbose_name="Последняя проверка", blank=True, null=True
     )
+    last_video_date = models.DateTimeField(
+        verbose_name="Публикация последнего видео", blank=True, null=True
+    )
     active = models.BooleanField(verbose_name="Активный", default=False, null=True)
 
     class Meta:
@@ -208,7 +211,7 @@ class Schedule(models.Model):
         blank=True,
         null=True,
         choices=POST_TYPES,
-        help_text="Пока что работает только video. Казать только поле данные"
+        help_text="Пока что работает только video. Казать только поле данные",
     )
     data = models.TextField(
         verbose_name="Данные",
@@ -234,4 +237,11 @@ class Schedule(models.Model):
         verbose_name_plural = "Расписания"
 
     def __str__(self):
-        return f"{self.post_type}:{self.post_time.strftime('%H:%M %d-%m')}"
+        if self.data:
+            return (
+                f"{self.post_type}:{self.data}:{self.post_time.strftime('%H:%M %d-%m')}"
+            )
+        return (
+            f"{self.post_type}:{self.message}:{self.post_time.strftime('%H:%M %d-%m')}"
+        )
+

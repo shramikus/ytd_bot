@@ -42,7 +42,14 @@ class VideoAdmin(admin.ModelAdmin):
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ("id", "playlist_name", "playlist_url", "active", "update_time")
+    list_display = (
+        "id",
+        "playlist_name",
+        "playlist_url",
+        "active",
+        "last_video_date",
+        "update_time",
+    )
 
 
 @admin.register(Schedule)

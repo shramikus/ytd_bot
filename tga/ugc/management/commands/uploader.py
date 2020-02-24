@@ -21,6 +21,7 @@ def get_videos():
     videos = Video.objects.filter(Q(tg_id__isnull=True) | Q(tg_id=""))
     print(videos)
     for v in videos:
+        v = Video.objects.get(yt_id=v.yt_id)
         video = utils.YoutubeVideo(v.yt_id)
 
         loop = asyncio.get_event_loop()
@@ -50,4 +51,4 @@ class Command(BaseCommand):
 
         while True:
             get_videos()
-            time.sleep(60)
+            time.sleep(30)

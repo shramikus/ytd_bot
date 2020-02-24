@@ -162,7 +162,7 @@ class YoutubeVideo:
             "--write-thumbnail",
             "--write-info-json",
             "-f",
-            "mp4",
+            "bestvideo[ext=mp4][height<=720][filesize<=450M]+bestaudio[ext=m4a]/mp4",
             "-o",
             f"{settings.DOWNLOAD_PATH}/%(id)s/%(id)s.%(ext)s",
             self.make_url(),

@@ -80,7 +80,7 @@ def playlists_update_checker():
     for playlist_id in playlists:
 
         playlist = Playlist.objects.get(id=playlist_id)
-        
+
         if playlist_check(playlist):
             playlist.last_video_date = datetime.now(tz=timezone.utc)
 

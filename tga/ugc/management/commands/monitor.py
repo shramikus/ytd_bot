@@ -23,21 +23,42 @@ def create_playlist(message):
     return playlist
 
 
-def create_video(video_id, playlist=None):
+def add_video_to_base(video_id, playlist=None):
+    """
+    Add a single video to playlist with hot status from playlist status.
+    """
     video = Video(yt_id=video_id, playlist=playlist, hot=playlist.active)
     video.save()
-    logging.info("Видео добавлено: %s", video_id)
     return video
+
+
+def get_new_videos(playlist):
+    """
+    Get new videos from playlist.
+    """
+    url = playlist.playlist_url
+    dateafter = playlist.update_time
+
+    existed_videos = Video.objects.values_list("yt_id", flat=True)
+    received_videos = utils.get_ids_by_link(url, date_after=dateafter)
+
+    if isinstance(received_videos, str):
+        logging.info("%s", received_videos)
+        return []
+
+    new_videos = [video for video in received_videos if video not in existed_videos]
+    return new_videos
+
 
 def playlist_check(playlist):
     """
-    Check one playlist.
+    Check playlist for new videos and add them to database if not existed.
     """
-    playlist_url = playlist.playlist_url
-    date_after = playlist.update_time
-    
-    playlist_videos = utils.get_ids_by_link(playlist_url, date_after=date_after)
-    filtred_videos = utils.existed_videos(playlist_videos)
+    new_videos = get_new_videos(playlist)
+    logging.info("New videos: %s from %s", new_videos, playlist.playlist_name)
+
+    for video in new_videos:
+        add_video_to_base(video, playlist)
 
 
 def playlists_update_checker():
@@ -47,20 +68,7 @@ def playlists_update_checker():
     playlists = Playlist.objects.all()
 
     for playlist in playlists:
-
-        playlist_url = playlist.playlist_url
-        date_after = playlist.update_time
-
-        playlist_videos = utils.get_ids_by_link(playlist_url, date_after=date_after)
-
-        filtred_videos = utils.existed_videos(playlist_videos)
-
-        if isinstance(filtred_videos, str):
-            logging.warning("%s", filtred_videos)
-
-        else:
-            for video_id in filtred_videos:
-                create_video(video_id, playlist=playlist)
+        playlist_check(playlist)
 
         playlist.update_time = datetime.now(tz=timezone.utc)
         playlist.save()
@@ -83,7 +91,7 @@ def messages_check():
 
             if isinstance(filtred_ids, list):
                 for video_id in filtred_ids:
-                    create_video(video_id)
+                    add_video_to_base(video_id)
             elif isinstance(filtred_ids, str):
                 logging.warning("%s", filtred_ids)
 
@@ -98,6 +106,6 @@ class Command(BaseCommand):
 
         while True:
             messages_check()
-            playlists_check()
+            playlists_update_checker()
 
             time.sleep(60)

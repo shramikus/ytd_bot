@@ -20,8 +20,15 @@ logging.basicConfig(
 
 
 def get_id(url):
-    channel_id = re.findall(r"channel\/([\w\d\-\_]+)", url)[0]
-    return channel_id
+    if 'channel' in url:
+        channel_id = re.findall(r"channel\/([\w\d\-\_]+)", url)[0]
+        return 'channel', channel_id
+    if 'playlist' in url:
+        channel_id = re.findall(r"list=([\w\d\-\_]+)", url)[0]
+        return 'playlist', channel_id
+    if 'user' in url:
+        channel_id = re.findall(r"user\/([\w\d\-\_]+)", url)[0]
+        return 'user', channel_id
 
 
 def get_videos_json(playlist_id):
@@ -35,8 +42,13 @@ def get_videos_json(playlist_id):
 
 
 def get_videos_xml(playlist_id):
-    request_url = "https://www.youtube.com/feeds/videos.xml?channel_id={}"
-    playlist_info = requests.get(request_url.format(playlist_id)).content
+    if playlist_id[0] == 'channel':
+        request_url = "https://www.youtube.com/feeds/videos.xml?channel_id={}"
+    elif playlist_id[0] == 'playlist':
+        request_url = "https://www.youtube.com/feeds/videos.xml?playlist_id={}"
+    elif playlist_id[0] == 'playlist':
+        request_url = "https://www.youtube.com/feeds/videos.xml?user={}"
+    playlist_info = requests.get(request_url.format(playlist_id[1])).content
     return ElementTree.fromstring(playlist_info)
 
 
@@ -162,6 +174,8 @@ def playlists_update_checker():
         playlist.update_time = datetime.now(tz=timezone.utc)
         playlist.save()
 
+        time.sleep(5)
+
 
 def messages_check():
     try:
@@ -197,4 +211,4 @@ class Command(BaseCommand):
             messages_check()
             playlists_update_checker()
 
-            time.sleep(30)
+            time.sleep(90)

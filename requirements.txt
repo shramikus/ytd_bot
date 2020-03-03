@@ -7,5 +7,6 @@ pillow
 cryptg
 pysocks
 python-telegram-bot
+requests
 # pyrogram
 # tgcrypto

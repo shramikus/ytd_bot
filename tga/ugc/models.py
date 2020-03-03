@@ -140,7 +140,7 @@ class Video(models.Model):
     uploader = models.CharField(
         verbose_name="Канал отправителя", max_length=255, blank=True, null=True
     )
-    upload_date = models.DateField(
+    upload_date = models.DateTimeField(
         verbose_name="Дата публикации", blank=True, null=True
     )
     view_count = models.PositiveIntegerField(

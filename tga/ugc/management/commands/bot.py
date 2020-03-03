@@ -222,8 +222,8 @@ class Command(BaseCommand):
         updater = Updater(bot=bot, use_context=True)
 
         job_queue.set_dispatcher(updater.dispatcher)
-        job_queue.run_repeating(upload_hot_video, 60, name="hot")
-        job_queue.run_repeating(setup_schedule, 60, name="schedule_setup")
+        job_queue.run_repeating(upload_hot_video, 30, name="hot")
+        job_queue.run_repeating(setup_schedule, 30, name="schedule_setup")
         job_queue.start()
 
         message_handler = MessageHandler(Filters.text, do_echo)

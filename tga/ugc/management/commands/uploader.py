@@ -31,15 +31,17 @@ def get_videos():
 
         v.title = video.title
         v.uploader = video.uploader
-        v.upload_date = timezone.get_current_timezone().localize(
-            datetime.strptime(video.upload_date, "%Y%m%d")
-        )
         v.view_count = video.view_count
         v.tg_id = video.tg_id
         v.rating = video.average_rating
         v.tags = video.tags
         v.categories = video.categories
         v.likes = video.like_count
+
+        if not v.upload_date:
+            v.upload_date = timezone.get_current_timezone().localize(
+                datetime.strptime(video.upload_date, "%Y%m%d")
+            )
 
         v.save()
 

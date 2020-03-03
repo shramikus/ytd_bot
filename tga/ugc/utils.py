@@ -62,7 +62,8 @@ def get_ids_by_link(link, num=None, date_after=None):
             "youtube-dl",
             "--get-id",
             "--skip-download",
-            "--cookies", "cookies",
+            "--cookies",
+            "cookies",
             # "--socket-timeout",
             # "120",
             "--playlist-end",
@@ -74,7 +75,8 @@ def get_ids_by_link(link, num=None, date_after=None):
             "youtube-dl",
             "--get-id",
             "--skip-download",
-            "--cookies", "cookies",
+            "--cookies",
+            "cookies",
             # "--socket-timeout",
             # "120",
             "--dateafter",
@@ -163,9 +165,11 @@ class YoutubeVideo:
             "--quiet",
             "--write-thumbnail",
             "--write-info-json",
-            "--cookies", "cookies",
+            "--cookies",
+            "cookies",
             "-f",
-            "bestvideo[ext=mp4][height<=720][filesize<=450M]+bestaudio[ext=m4a]/mp4",
+            "bestvideo[ext=mp4][height<=720][filesize<=450M]+bestaudio[ext=m4a]/"
+            "mp4[protocol!=m3u8]",
             "-o",
             f"{settings.DOWNLOAD_PATH}/%(id)s/%(id)s.%(ext)s",
             self.make_url(),
@@ -183,7 +187,6 @@ class YoutubeVideo:
             logging.info("%s", encoded_stderr)
             return 0
         return 1
-
 
     def update_metadata(self):
         self.download_video()

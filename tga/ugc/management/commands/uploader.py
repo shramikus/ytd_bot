@@ -52,5 +52,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         while True:
-            get_videos()
+            try:
+                get_videos()
+            except Exception as e:
+                logging.warning(e)
             time.sleep(30)

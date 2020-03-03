@@ -14,6 +14,8 @@ logging.basicConfig(
     format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.INFO
 )
 
+edit = lambda x: x.strip().decode("utf-8")
+
 
 def markdown_link(youtube_id):
     link = f"https://www.youtube.com/watch?v={youtube_id}"
@@ -79,8 +81,6 @@ def get_ids_by_link(link, num=None, date_after=None):
             format_date(date_after),
             link,
         ]
-
-    edit = lambda x: x.strip().decode("utf-8")
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout = list(map(edit, p.stdout.readlines())) if p.stdout else ""
@@ -172,11 +172,20 @@ class YoutubeVideo:
         ]
 
         stderr = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        if stderr:
-            logging.warning("stderr: %s", stderr)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout = list(map(edit, p.stdout.readlines())) if p.stdout else ""
+        stderr = p.stderr.read()
+        try:
+            encoded_stderr = stderr.decode("utf-8") if stderr else ""
+        except UnicodeDecodeError:
+            encoded_stderr = str(stderr if stderr else "")
+        if encoded_stderr:
+            logging.info("%s", encoded_stderr)
+            return 0
+        return 1
+
 
     def update_metadata(self):
-
         self.download_video()
 
         with open(self.get_full_path("info.json"), "r") as file:

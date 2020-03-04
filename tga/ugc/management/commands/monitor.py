@@ -20,33 +20,37 @@ logging.basicConfig(
 
 
 def get_id(url):
-    if 'channel' in url:
+    if "channel" in url:
         channel_id = re.findall(r"channel\/([\w\d\-\_]+)", url)[0]
-        return 'channel', channel_id
-    if 'playlist' in url:
+        return "channel", channel_id
+    if "playlist" in url:
         channel_id = re.findall(r"list=([\w\d\-\_]+)", url)[0]
-        return 'playlist', channel_id
-    if 'user' in url:
+        return "playlist", channel_id
+    if "user" in url:
         channel_id = re.findall(r"user\/([\w\d\-\_]+)", url)[0]
-        return 'user', channel_id
+        return "user", channel_id
 
 
 def get_videos_json(playlist_id):
     api_key = "AIzaSyDdO6QM7ytguBUstgv3BWh0Q37dT5T3N6w"
-    request_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={}&maxResults=5&order=date&type=video&key={}"
-
-    playlist_info = requests.get(request_url.format(playlist_id, api_key)).json()[
+    if playlist_id[0] == "channel":
+        request_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={}&maxResults=5&order=date&type=video&key={}"
+    elif playlist_id[0] == "playlist":
+        request_url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet&id={}&maxResults=5&order=date&type=video&key={}"
+    elif playlist_id[0] == "user":
+        pass
+    playlist_info = requests.get(request_url.format(playlist_id[1], api_key)).json()[
         "items"
     ]
     return playlist_info
 
 
 def get_videos_xml(playlist_id):
-    if playlist_id[0] == 'channel':
+    if playlist_id[0] == "channel":
         request_url = "https://www.youtube.com/feeds/videos.xml?channel_id={}"
-    elif playlist_id[0] == 'playlist':
+    elif playlist_id[0] == "playlist":
         request_url = "https://www.youtube.com/feeds/videos.xml?playlist_id={}"
-    elif playlist_id[0] == 'playlist':
+    elif playlist_id[0] == "user":
         request_url = "https://www.youtube.com/feeds/videos.xml?user={}"
     playlist_info = requests.get(request_url.format(playlist_id[1])).content
     return ElementTree.fromstring(playlist_info)
@@ -112,15 +116,21 @@ def add_video_to_base(video_data, playlist=None):
     return video
 
 
-def get_new_videos(url, parser='xml'):
+def get_new_videos(url, parser="xml"):
     """
     Get new videos from playlist.
     """
     # dateafter = playlist.update_time
 
     existed_videos = Video.objects.values_list("yt_id", flat=True)
-
-    received_videos = get_videos_data(url, num=3, parser=parser)
+    try:
+        received_videos = get_videos_data(url, num=3, parser=parser)
+    except Exception as e:
+        logging.warning(e)
+        try:
+            received_videos = get_videos_data(url, num=3, parser="json")
+        except Exception as e:
+            received_videos = get_videos_data(url, num=3, parser="yotube-dl")
 
     if isinstance(received_videos, str):
         logging.info("%s", received_videos)
@@ -145,9 +155,7 @@ def playlist_check(playlist):
 
     if new_videos:
         logging.info(
-            "    New videos: %s from %s",
-            new_videos,
-            playlist.playlist_name,
+            "    New videos: %s from %s", new_videos, playlist.playlist_name,
         )
 
         for video in new_videos:
@@ -191,7 +199,7 @@ def messages_check():
 
         elif message.message_type == "video":
             url = message.text
-            new_videos = get_new_videos(url, parser='yotube-dl')
+            new_videos = get_new_videos(url, parser="yotube-dl")
 
         logging.info("\tNew videos: %s", new_videos)
 

@@ -179,6 +179,15 @@ class Video(models.Model):
         verbose_name_plural = "Видео"
 
 
+class Settings(models.Model):
+    tags = models.CharField(
+        verbose_name="Теги", max_length=255, default="", blank=True, null=True
+    )
+
+    class Meta:
+        verbose_name = "Настройки публикации"
+
+
 class Playlist(models.Model):
     playlist_name = models.CharField(
         verbose_name="Название", max_length=255, blank=True, null=True

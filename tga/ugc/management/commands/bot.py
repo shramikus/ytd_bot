@@ -176,7 +176,9 @@ def help_command(update: Update, context: CallbackContext):
     update.message.reply_text(text=text)
 
 def tags_intersection(true_tags, tags):
+    tags = tags.lower()
     for tag in true_tags:
+        tag = tag.lower()
         if tag in tags:
             return True
     return False

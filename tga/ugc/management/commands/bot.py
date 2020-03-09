@@ -17,7 +17,7 @@ from telegram.ext import (
 )
 from telegram.utils.request import Request
 
-from ugc.models import Message, Profile, Video, Schedule
+from ugc.models import Message, Profile, Video, Schedule, Settings
 from ugc import utils
 
 
@@ -175,12 +175,20 @@ def help_command(update: Update, context: CallbackContext):
 
     update.message.reply_text(text=text)
 
+def tags_intersection(true_tags, tags):
+    for tag in true_tags:
+        if tag in tags:
+            return True
+    return False
+
 
 def upload_hot_video(context: CallbackContext):
     videos = Video.objects.filter(hot=True, tg_id__isnull=False, status=0)
     v = videos.first()
 
-    if v:
+    publication_tags = [tag.tags for tag in Settings.obects.all()]
+
+    if v and tags_intersection(publication_tags, v.tags):
         caption = (
             f"*{v.title}*\n"
             f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"

@@ -219,4 +219,4 @@ class Command(BaseCommand):
             messages_check()
             playlists_update_checker()
 
-            time.sleep(90)
+            time.sleep(130)

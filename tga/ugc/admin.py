@@ -18,7 +18,7 @@ class AppConfigAdmin(admin.ModelAdmin):
 
 @admin.register(Settings)
 class SettingsAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("tags")
 
 
 @admin.register(Profile)

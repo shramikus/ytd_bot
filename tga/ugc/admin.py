@@ -7,12 +7,17 @@ from .models import Video
 from .models import AppConfig
 from .models import Playlist
 from .models import Schedule
+from .models import Settings
 
 
 @admin.register(AppConfig)
 class AppConfigAdmin(admin.ModelAdmin):
     # list_display = ('session_name', 'api_id', 'api_hash', 'is_active', 'is_bot',
     #                 'bot_token', 'posting_channel', 'temp_chat', 'timestamp')
+    pass
+
+@admin.register(Settings)
+class SettingsAdmin(admin.ModelAdmin):
     pass
 
 

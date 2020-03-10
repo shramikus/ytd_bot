@@ -186,21 +186,20 @@ def tags_intersection(true_tags, tags):
 
 def upload_hot_video(context: CallbackContext):
     videos = Video.objects.filter(hot=True, tg_id__isnull=False, status=0)
-    v = videos.first()
-
     publication_tags = [tag.tags for tag in Settings.objects.all()]
+    
+    for v in videos:
+        if tags_intersection(publication_tags, v.tags):
+            caption = (
+                f"*{v.title}*\n"
+                f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
+            )
+            v.status += 1
+            v.save()
 
-    if v and tags_intersection(publication_tags, v.tags):
-        caption = (
-            f"*{v.title}*\n"
-            f"Автор: [{v.uploader}](https://www.youtube.com/watch?v={v.yt_id})"
-        )
-        v.status += 1
-        v.save()
-
-        context.bot.send_video(
-            config.posting_channel, v.tg_id, caption=caption, parse_mode="Markdown"
-        )
+            context.bot.send_video(
+                config.posting_channel, v.tg_id, caption=caption, parse_mode="Markdown"
+            )
 
 
 def setup_schedule(context: CallbackContext):

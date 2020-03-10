@@ -188,7 +188,7 @@ def upload_hot_video(context: CallbackContext):
     videos = Video.objects.filter(hot=True, tg_id__isnull=False, status=0)
     v = videos.first()
 
-    publication_tags = [tag.tags for tag in Settings.obects.all()]
+    publication_tags = [tag.tags for tag in Settings.objects.all()]
 
     if v and tags_intersection(publication_tags, v.tags):
         caption = (

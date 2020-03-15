@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+from PIL import Image
 
 import time
 from django.conf import settings
@@ -224,7 +225,7 @@ class YoutubeVideo:
             file = await client.send_file(
                 config.temp_chat,
                 self.get_full_path("mp4"),
-                thumb=self.get_full_path("jpg"),
+                thumb=self.resize_image(self.get_full_path("jpg")),
                 supports_streaming=True,
                 # progress_callback=progress_callback,
             )
@@ -233,3 +234,11 @@ class YoutubeVideo:
             logging.info("tg_id: %s", self.tg_id)
 
             shutil.rmtree(self.get_full_path(), ignore_errors=True)
+
+    @staticmethod
+    def resize_image(path):
+        img = Image.open(path)
+        img.thumbnail((320, 320), resample=Image.LANCZOS, reducing_gap=3.0)
+        img.save(path)
+
+        return path

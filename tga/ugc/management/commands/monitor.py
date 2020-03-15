@@ -109,9 +109,15 @@ def add_video_to_base(video_data, playlist=None):
     """
     video_id = video_data[0]
     video_date = video_data[1]
-    video = Video(
-        yt_id=video_id, upload_date=video_date, playlist=playlist, hot=playlist.active
-    )
+    if playlist:
+        video = Video(
+            yt_id=video_id,
+            upload_date=video_date,
+            playlist=playlist,
+            hot=playlist.active,
+        )
+    else:
+        video = Video(yt_id=video_id, upload_date=video_date)
     video.save()
     return video
 

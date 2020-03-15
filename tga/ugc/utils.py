@@ -239,6 +239,6 @@ class YoutubeVideo:
     def resize_image(path):
         img = Image.open(path)
         img.thumbnail((320, 320), resample=Image.LANCZOS, reducing_gap=3.0)
-        img.save(path)
+        img.save(path, "JPEG", quality=100)
 
         return path

@@ -222,7 +222,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         while True:
-            messages_check()
+            # messages_check()
             playlists_update_checker()
 
             time.sleep(130)

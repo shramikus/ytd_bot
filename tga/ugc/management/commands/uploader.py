@@ -21,29 +21,34 @@ def get_videos():
     videos = Video.objects.filter(Q(tg_id__isnull=True) | Q(tg_id=""))
     print(videos)
     for v in videos:
-        v = Video.objects.get(yt_id=v.yt_id)
-        video = utils.YoutubeVideo(v.yt_id)
+        try:
+            v = Video.objects.get(yt_id=v.yt_id)
+            video = utils.YoutubeVideo(v.yt_id)
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(video.send_video())
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(video.send_video())
 
-        logging.info("Видео загружено %s", v.yt_id)
+            logging.info("Видео загружено %s", v.yt_id)
 
-        v.title = video.title
-        v.uploader = video.uploader
-        v.view_count = video.view_count
-        v.tg_id = video.tg_id
-        v.rating = video.average_rating
-        v.tags = video.tags
-        v.categories = video.categories
-        v.likes = video.like_count
+            v.title = video.title
+            v.uploader = video.uploader
+            v.view_count = video.view_count
+            v.tg_id = video.tg_id
+            v.rating = video.average_rating
+            v.tags = video.tags
+            v.categories = video.categories
+            v.likes = video.like_count
 
-        if not v.upload_date:
-            v.upload_date = timezone.get_current_timezone().localize(
-                datetime.strptime(video.upload_date, "%Y%m%d")
-            )
+            if not v.upload_date:
+                v.upload_date = timezone.get_current_timezone().localize(
+                    datetime.strptime(video.upload_date, "%Y%m%d")
+                )
 
-        v.save()
+            v.save()
+        except Exception as e:
+
+            logging.warning(e)
+
 
 
 class Command(BaseCommand):
